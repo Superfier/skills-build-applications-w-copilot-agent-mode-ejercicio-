@@ -17,6 +17,9 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import UserViewSet, TeamViewSet, ActivityViewSet, WorkoutViewSet, LeaderboardViewSet, api_root
+import os
+from django.http import JsonResponse
+
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -25,8 +28,19 @@ router.register(r'activities', ActivityViewSet)
 router.register(r'workouts', WorkoutViewSet)
 router.register(r'leaderboard', LeaderboardViewSet)
 
+CODESPACE_NAME = os.environ.get('CODESPACE_NAME')
+def api_url_info(request):
+    base_url = f"https://{CODESPACE_NAME}-8000.app.github.dev" if CODESPACE_NAME else "http://localhost:8000"
+    return JsonResponse({
+        "users": f"{base_url}/api/users/",
+        "teams": f"{base_url}/api/teams/",
+        "activities": f"{base_url}/api/activities/",
+        "workouts": f"{base_url}/api/workouts/",
+        "leaderboard": f"{base_url}/api/leaderboard/"
+    })
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', api_root, name='api-root'),
+    path('', api_url_info, name='api-url-info'),
     path('api/', include(router.urls)),
 ]
