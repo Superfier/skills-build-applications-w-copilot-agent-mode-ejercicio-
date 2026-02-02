@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from octofit_tracker.models import User, Team, Activity
 
 class Command(BaseCommand):
-    help = 'Popula la base de datos con datos de ejemplo para Octofit Tracker.'
+    help = 'Populate the octofit_db database with test data.'
 
     def handle(self, *args, **options):
         # Crear usuarios de ejemplo
