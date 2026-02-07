@@ -1,0 +1,6 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "git push": true,
+        "git -C /workspaces/skills-build-applications-w-copilot-agent-mode-ejercicio-": true
+    }
+}
