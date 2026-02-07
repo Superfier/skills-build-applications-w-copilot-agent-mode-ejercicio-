@@ -12,7 +12,7 @@ const Leaderboard = () => {
           ? `https://${process.env.REACT_APP_CODESPACE_NAME}-8000.app.github.dev`
           : 'http://localhost:8000';
         
-        const apiUrl = `${codespaceUrl}/api/leaderboards/`;
+        const apiUrl = `${codespaceUrl}/api/leaderboard/`;
         console.log('Fetching leaderboard from:', apiUrl);
         
         const response = await fetch(apiUrl);
