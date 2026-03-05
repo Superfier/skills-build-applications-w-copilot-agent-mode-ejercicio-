@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getApiBaseUrl, fetchWithAuth } from '../api';
+import { getApiBaseUrl, fetchWithAuth, requestJson } from '../api';
 
 const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -7,6 +7,36 @@ const Leaderboard = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const buildComputedLeaderboard = async () => {
+      const [teamsData, activitiesData] = await Promise.all([
+        requestJson(`${getApiBaseUrl()}/teams/`),
+        requestJson(`${getApiBaseUrl()}/activities/`),
+      ]);
+
+      const teams = Array.isArray(teamsData?.results) ? teamsData.results : (Array.isArray(teamsData) ? teamsData : []);
+      const activities = Array.isArray(activitiesData?.results) ? activitiesData.results : (Array.isArray(activitiesData) ? activitiesData : []);
+
+      const nowIso = new Date().toISOString().slice(0, 10);
+      const computed = teams
+        .map((team, index) => {
+          const members = Array.isArray(team.members) ? team.members : [];
+          const score = activities
+            .filter((activity) => members.includes(activity.user))
+            .reduce((acc, activity) => acc + Number(activity.calories || 0), 0);
+
+          return {
+            id: `computed-${team.id || index}`,
+            team: team.id,
+            team_name: team.name,
+            score: Math.round(score),
+            week: nowIso,
+          };
+        })
+        .sort((a, b) => b.score - a.score);
+
+      return computed;
+    };
+
     const fetchLeaderboard = async () => {
       try {
         const apiUrl = `${getApiBaseUrl()}/leaderboard/`;
@@ -23,10 +53,16 @@ const Leaderboard = () => {
         
         // Handle both paginated (.results) and plain array responses
         const leaderboardList = data.results || data;
-        const sortedList = Array.isArray(leaderboardList) 
-          ? leaderboardList.sort((a, b) => b.score - a.score) 
+        const sortedList = Array.isArray(leaderboardList)
+          ? leaderboardList.sort((a, b) => b.score - a.score)
           : [];
-        setLeaderboard(sortedList);
+
+        if (sortedList.length > 0) {
+          setLeaderboard(sortedList);
+        } else {
+          const computed = await buildComputedLeaderboard();
+          setLeaderboard(computed);
+        }
         setError(null);
       } catch (error) {
         console.error('Error fetching leaderboard:', error);
@@ -119,7 +155,7 @@ const Leaderboard = () => {
                             </div>
                           </td>
                           <td className="align-middle">
-                            <strong>{entry.team}</strong>
+                            <strong>{entry.team_name || entry.team}</strong>
                           </td>
                           <td className="text-center align-middle">
                             <h5 className="mb-0">
