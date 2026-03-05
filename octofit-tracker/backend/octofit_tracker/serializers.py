@@ -4,12 +4,16 @@ from .models import User, Team, Activity, Workout, Leaderboard
 
 class ObjectIdStringMixin:
     def get_id(self, obj):
-        value = getattr(obj, 'pk', None) or getattr(obj, 'id', None) or getattr(obj, 'username', None)
+        value = getattr(obj, 'pk', None) or getattr(obj, 'id', None)
         return str(value) if value is not None else ''
 
 
 class UserSerializer(ObjectIdStringMixin, serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
+
+    def get_id(self, obj):
+        value = getattr(obj, 'public_id', None) or getattr(obj, 'username', None)
+        return str(value) if value is not None else ''
 
     class Meta:
         model = User
@@ -17,7 +21,7 @@ class UserSerializer(ObjectIdStringMixin, serializers.ModelSerializer):
 
 class TeamSerializer(ObjectIdStringMixin, serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
-    members = serializers.PrimaryKeyRelatedField(many=True, read_only=True, pk_field=serializers.CharField())
+    members = serializers.ListField(child=serializers.CharField(), read_only=True)
 
     class Meta:
         model = Team
@@ -25,7 +29,7 @@ class TeamSerializer(ObjectIdStringMixin, serializers.ModelSerializer):
 
 class ActivitySerializer(ObjectIdStringMixin, serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
-    user = serializers.PrimaryKeyRelatedField(read_only=True, pk_field=serializers.CharField())
+    user = serializers.CharField(read_only=True)
 
     class Meta:
         model = Activity
@@ -42,7 +46,8 @@ class WorkoutSerializer(ObjectIdStringMixin, serializers.ModelSerializer):
 class LeaderboardSerializer(ObjectIdStringMixin, serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
     team = serializers.PrimaryKeyRelatedField(read_only=True, pk_field=serializers.CharField())
+    team_name = serializers.CharField(source='team.name', read_only=True)
 
     class Meta:
         model = Leaderboard
-        fields = ['id', 'team', 'score', 'week']
+        fields = ['id', 'team', 'team_name', 'score', 'week']
