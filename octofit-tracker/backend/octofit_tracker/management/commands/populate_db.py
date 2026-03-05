@@ -45,7 +45,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        # Crear usuarios de ejemplo de forma idempotente.
+        # Crear usuarios de ejemplo de forma independente.
         user1, _ = User.objects.get_or_create(
             username='alice',
             defaults={'email': 'alice@example.com'}

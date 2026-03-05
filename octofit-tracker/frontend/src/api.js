@@ -1,4 +1,5 @@
 const getCodespaceName = () => process.env.REACT_APP_CODESPACE_NAME;
+const getExplicitApiBaseUrl = () => process.env.REACT_APP_API_BASE_URL;
 
 const fromBrowserLocation = () => {
   if (typeof window === 'undefined') {
@@ -19,6 +20,16 @@ const fromBrowserLocation = () => {
 };
 
 export const getApiBaseUrl = () => {
+  const explicitApiBaseUrl = getExplicitApiBaseUrl();
+  if (explicitApiBaseUrl) {
+    return explicitApiBaseUrl.replace(/\/$/, '');
+  }
+
+  // In CRA dev mode use the frontend dev-server proxy to avoid CORS/public-port auth redirects.
+  if (typeof window !== 'undefined') {
+    return '/api';
+  }
+
   const browserResolvedUrl = fromBrowserLocation();
   if (browserResolvedUrl) {
     return browserResolvedUrl;

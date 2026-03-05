@@ -122,9 +122,15 @@ const Activities = () => {
   };
 
   const handleUpdateActivity = async (activityId) => {
+    const encodedActivityId = encodeURIComponent(String(activityId || ''));
+    if (!encodedActivityId) {
+      setError('Unable to update activity: missing activity identifier.');
+      return;
+    }
+
     setSaving(true);
     try {
-      await requestJson(`${getApiBaseUrl()}/activities/${activityId}/`, {
+      await requestJson(`${getApiBaseUrl()}/activities/${encodedActivityId}/`, {
         method: 'PATCH',
         body: JSON.stringify({
           activity_type: editingForm.activity_type,
@@ -143,13 +149,19 @@ const Activities = () => {
   };
 
   const handleDeleteActivity = async (activityId) => {
+    const encodedActivityId = encodeURIComponent(String(activityId || ''));
+    if (!encodedActivityId) {
+      setError('Unable to delete activity: missing activity identifier.');
+      return;
+    }
+
     if (!window.confirm('Delete this activity?')) {
       return;
     }
 
     setSaving(true);
     try {
-      await requestJson(`${getApiBaseUrl()}/activities/${activityId}/`, {
+      await requestJson(`${getApiBaseUrl()}/activities/${encodedActivityId}/`, {
         method: 'DELETE',
       });
       if (editingActivityId === activityId) {

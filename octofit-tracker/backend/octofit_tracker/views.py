@@ -1,8 +1,13 @@
+import base64
+import json
+from urllib.parse import unquote
+
 from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
+from django.http import Http404
 from django.contrib.auth import authenticate
 from .models import User, Team, Activity, Workout, Leaderboard
 from .serializers import UserSerializer, TeamSerializer, ActivitySerializer, WorkoutSerializer, LeaderboardSerializer
@@ -21,6 +26,60 @@ class TeamViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(members=[self.request.user.username])
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        identifier = self.kwargs.get(self.lookup_url_kwarg or self.lookup_field)
+
+        # Standard pk lookup for normal rows.
+        obj = None
+        try:
+            obj = queryset.filter(pk=identifier).first()
+        except Exception:
+            obj = None
+        if obj is not None:
+            self.check_object_permissions(self.request, obj)
+            return obj
+
+        # Legacy fallback when API ids are name-based.
+        if isinstance(identifier, str) and identifier.startswith('name:'):
+            team_name = unquote(identifier.split(':', 1)[1])
+            obj = queryset.filter(name=team_name).order_by('-created_at').first()
+            if obj is not None:
+                self.check_object_permissions(self.request, obj)
+                return obj
+
+        raise Http404
+
+    @staticmethod
+    def _legacy_filter_for_instance(obj):
+        return Team.objects.filter(name=obj.name, created_at=obj.created_at)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        if getattr(instance, 'pk', None) is None:
+            updated = self._legacy_filter_for_instance(instance).update(**serializer.validated_data)
+            if not updated:
+                raise Http404
+            for field, value in serializer.validated_data.items():
+                setattr(instance, field, value)
+            return Response(self.get_serializer(instance).data)
+
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if getattr(instance, 'pk', None) is None:
+            deleted, _ = self._legacy_filter_for_instance(instance).delete()
+            if not deleted:
+                raise Http404
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class ActivityViewSet(viewsets.ModelViewSet):
     queryset = Activity.objects.all()
@@ -47,10 +106,135 @@ class ActivityViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user.username)
 
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        identifier = self.kwargs.get(self.lookup_url_kwarg or self.lookup_field)
+
+        obj = None
+        try:
+            obj = queryset.filter(pk=identifier).first()
+        except Exception:
+            obj = None
+        if obj is not None:
+            self.check_object_permissions(self.request, obj)
+            return obj
+
+        if isinstance(identifier, str) and identifier.startswith('legacy:'):
+            token = identifier.split(':', 1)[1]
+            try:
+                payload_json = base64.urlsafe_b64decode(token.encode('ascii')).decode('utf-8')
+                payload = json.loads(payload_json)
+                obj = queryset.filter(
+                    user=payload.get('user', ''),
+                    activity_type=payload.get('activity_type', ''),
+                    date=payload.get('date', ''),
+                    duration=int(payload.get('duration', 0) or 0),
+                    calories=float(payload.get('calories', 0) or 0),
+                ).order_by('-date').first()
+                if obj is not None:
+                    self.check_object_permissions(self.request, obj)
+                    return obj
+            except Exception:
+                pass
+
+        raise Http404
+
+    @staticmethod
+    def _legacy_filter_for_instance(obj):
+        return Activity.objects.filter(
+            user=obj.user,
+            activity_type=obj.activity_type,
+            duration=obj.duration,
+            calories=obj.calories,
+            date=obj.date,
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        if getattr(instance, 'pk', None) is None:
+            updated = self._legacy_filter_for_instance(instance).update(**serializer.validated_data)
+            if not updated:
+                raise Http404
+            for field, value in serializer.validated_data.items():
+                setattr(instance, field, value)
+            return Response(self.get_serializer(instance).data)
+
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if getattr(instance, 'pk', None) is None:
+            deleted, _ = self._legacy_filter_for_instance(instance).delete()
+            if not deleted:
+                raise Http404
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class WorkoutViewSet(viewsets.ModelViewSet):
     queryset = Workout.objects.all()
     serializer_class = WorkoutSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        identifier = self.kwargs.get(self.lookup_url_kwarg or self.lookup_field)
+
+        obj = None
+        try:
+            obj = queryset.filter(pk=identifier).first()
+        except Exception:
+            obj = None
+        if obj is not None:
+            self.check_object_permissions(self.request, obj)
+            return obj
+
+        if isinstance(identifier, str) and identifier.startswith('name:'):
+            workout_name = unquote(identifier.split(':', 1)[1])
+            obj = queryset.filter(name=workout_name).first()
+            if obj is not None:
+                self.check_object_permissions(self.request, obj)
+                return obj
+
+        raise Http404
+
+    @staticmethod
+    def _legacy_filter_for_instance(obj):
+        return Workout.objects.filter(
+            name=obj.name,
+            description=obj.description,
+            difficulty=obj.difficulty,
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        if getattr(instance, 'pk', None) is None:
+            updated = self._legacy_filter_for_instance(instance).update(**serializer.validated_data)
+            if not updated:
+                raise Http404
+            for field, value in serializer.validated_data.items():
+                setattr(instance, field, value)
+            return Response(self.get_serializer(instance).data)
+
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if getattr(instance, 'pk', None) is None:
+            deleted, _ = self._legacy_filter_for_instance(instance).delete()
+            if not deleted:
+                raise Http404
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class LeaderboardViewSet(viewsets.ModelViewSet):
     queryset = Leaderboard.objects.all()

@@ -62,13 +62,19 @@ const Teams = () => {
   };
 
   const handleUpdateTeam = async (teamId) => {
+    const encodedTeamId = encodeURIComponent(String(teamId || ''));
+    if (!encodedTeamId) {
+      setError('Unable to update team: missing team identifier.');
+      return;
+    }
+
     if (!editingTeamName.trim()) {
       return;
     }
 
     setSaving(true);
     try {
-      await requestJson(`${getApiBaseUrl()}/teams/${teamId}/`, {
+      await requestJson(`${getApiBaseUrl()}/teams/${encodedTeamId}/`, {
         method: 'PATCH',
         body: JSON.stringify({ name: editingTeamName.trim() }),
       });
@@ -82,13 +88,19 @@ const Teams = () => {
   };
 
   const handleDeleteTeam = async (teamId) => {
+    const encodedTeamId = encodeURIComponent(String(teamId || ''));
+    if (!encodedTeamId) {
+      setError('Unable to delete team: missing team identifier.');
+      return;
+    }
+
     if (!window.confirm('Delete this team?')) {
       return;
     }
 
     setSaving(true);
     try {
-      await requestJson(`${getApiBaseUrl()}/teams/${teamId}/`, {
+      await requestJson(`${getApiBaseUrl()}/teams/${encodedTeamId}/`, {
         method: 'DELETE',
       });
       if (editingTeamId === teamId) {
