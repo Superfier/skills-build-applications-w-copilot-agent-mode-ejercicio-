@@ -52,7 +52,7 @@ const Teams = () => {
   };
 
   const startEdit = (team) => {
-    setEditingTeamId(team.id);
+    setEditingTeamId(String(team.id));
     setEditingTeamName(team.name || '');
   };
 
@@ -132,22 +132,11 @@ const Teams = () => {
                 maxLength={100}
                 required
               />
-              <button type="submit" className="btn btn-success" disabled={saving}>
-                {saving ? 'Creating...' : 'Create Team'}
-              </button>
+              <button className="btn btn-primary" type="submit" disabled={saving}>Add</button>
             </div>
           </form>
         </div>
       </div>
-
-      {loading && (
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p className="mt-3 text-muted">Loading teams...</p>
-        </div>
-      )}
 
       {error && !loading && (
         <div className="alert alert-danger alert-dismissible fade show" role="alert">
@@ -157,11 +146,12 @@ const Teams = () => {
         </div>
       )}
 
-      {!loading && !error && teams.length === 0 && (
-        <div className="alert alert-info alert-dismissible fade show" role="alert">
-          <i className="bi bi-info-circle-fill me-2"></i>
-          <strong>No data available</strong> - No teams found. Please check the backend API.
-          <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      {loading && (
+        <div className="text-center my-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-3 text-muted">Loading teams...</p>
         </div>
       )}
 
@@ -187,74 +177,80 @@ const Teams = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {teams.map((team, index) => (
-                        <tr key={team.id || team.name || index}>
-                          <td className="text-center align-middle">
-                            <span className="badge bg-success">{team.id || index + 1}</span>
-                          </td>
-                          <td className="align-middle">
-                            {editingTeamId === team.id ? (
-                              <input
-                                className="form-control form-control-sm"
-                                value={editingTeamName}
-                                onChange={(e) => setEditingTeamName(e.target.value)}
-                                maxLength={100}
-                              />
-                            ) : (
-                              <strong>{team.name}</strong>
-                            )}
-                          </td>
-                          <td className="text-center align-middle">
-                            <span className="badge bg-info text-dark">
-                              {Array.isArray(team.members) ? team.members.length : 0}
-                            </span>
-                          </td>
-                          <td className="align-middle">
-                            {team.created_at ? new Date(team.created_at).toLocaleDateString() : '—'}
-                          </td>
-                          <td className="text-center align-middle">
-                            {editingTeamId === team.id ? (
+                      {teams.map((team, index) => {
+                        const teamIdStr = String(team.id);
+                        const isEditing = editingTeamId === teamIdStr;
+                        return (
+                          <tr key={teamIdStr || team.name || index}>
+                            <td className="text-center align-middle">
+                              <span className="badge bg-success">{typeof team.id === 'string' && team.id.length > 12 ? `${team.id.slice(0, 6)}...${team.id.slice(-4)}` : team.id || index + 1}</span>
+                            </td>
+                            <td className="align-middle">
+                              {isEditing ? (
+                                <input
+                                  className="form-control form-control-sm"
+                                  value={editingTeamName}
+                                  onChange={(e) => setEditingTeamName(e.target.value)}
+                                  maxLength={100}
+                                />
+                              ) : (
+                                <strong>{team.name}</strong>
+                              )}
+                            </td>
+                            <td className="text-center align-middle">
+                              <span className="badge bg-info text-dark">
+                                {Array.isArray(team.members) ? team.members.length : 0}
+                              </span>
+                            </td>
+                            <td className="align-middle">
+                              {team.created_at ? new Date(team.created_at).toLocaleDateString() : '—'}
+                            </td>
+                            <td className="text-center align-middle">
                               <div className="d-flex justify-content-center gap-2">
-                                <button
-                                  type="button"
-                                  className="btn btn-sm btn-primary"
-                                  onClick={() => handleUpdateTeam(team.id)}
-                                  disabled={saving}
-                                >
-                                  Save
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-sm btn-secondary"
-                                  onClick={cancelEdit}
-                                  disabled={saving}
-                                >
-                                  Cancel
-                                </button>
+                                {isEditing ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className="btn btn-sm btn-primary"
+                                      onClick={() => handleUpdateTeam(team.id)}
+                                      disabled={saving}
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="btn btn-sm btn-secondary"
+                                      onClick={cancelEdit}
+                                      disabled={saving}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className="btn btn-sm btn-outline-primary"
+                                      onClick={() => startEdit(team)}
+                                      disabled={saving}
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="btn btn-sm btn-outline-danger"
+                                      onClick={() => handleDeleteTeam(team.id)}
+                                      disabled={saving}
+                                    >
+                                      Delete
+                                    </button>
+                                  </>
+                                )}
                               </div>
-                            ) : (
-                              <div className="d-flex justify-content-center gap-2">
-                                <button
-                                  type="button"
-                                  className="btn btn-sm btn-outline-primary"
-                                  onClick={() => startEdit(team)}
-                                  disabled={saving}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-sm btn-outline-danger"
-                                  onClick={() => handleDeleteTeam(team.id)}
-                                  disabled={saving}
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -265,6 +261,6 @@ const Teams = () => {
       )}
     </div>
   );
-};
+}
 
 export default Teams;

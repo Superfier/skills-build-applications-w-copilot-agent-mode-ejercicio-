@@ -334,7 +334,7 @@ const Activities = () => {
                       {activities.map((activity, index) => (
                         <tr key={activity.id || `${activity.user}-${activity.date}-${index}`}>
                           <td className="text-center align-middle">
-                            <span className="badge bg-warning text-dark">{activity.id || index + 1}</span>
+                            <span className="badge bg-warning text-dark">{typeof activity.id === 'string' && activity.id.length > 12 ? `${activity.id.slice(0, 6)}...${activity.id.slice(-4)}` : activity.id || index + 1}</span>
                           </td>
                           <td className="align-middle">{activity.user}</td>
                           <td className="align-middle">

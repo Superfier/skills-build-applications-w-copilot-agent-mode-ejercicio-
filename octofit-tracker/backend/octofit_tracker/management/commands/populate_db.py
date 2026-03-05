@@ -1,8 +1,13 @@
+import logging
+
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
 from datetime import date
 from django.contrib.auth.hashers import make_password
 from octofit_tracker.models import User, Team, Activity, Workout
+
+
+logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     help = 'Populate the octofit_db database with test data.'
@@ -13,8 +18,8 @@ class Command(BaseCommand):
             team.members = usernames
             team.save()
             return
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning('Fallback to relation-style team assignment for %s: %s', getattr(team, 'name', 'unknown'), exc)
 
         members_attr = getattr(team, 'members', None)
         if hasattr(members_attr, 'clear'):
@@ -33,8 +38,8 @@ class Command(BaseCommand):
                 date=activity_date,
             )
             return
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning('Fallback to alternate activity owner type for %s: %s', getattr(user, 'username', 'unknown'), exc)
 
         Activity.objects.get_or_create(
             user=user,
@@ -45,84 +50,62 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        # Crear usuarios de ejemplo de forma independente.
-        user1, _ = User.objects.get_or_create(
-            username='alice',
-            defaults={'email': 'alice@example.com'}
-        )
-        User.objects.filter(username='alice').update(
-            email='alice@example.com',
-            password=make_password('password123'),
-        )
 
-        user2, _ = User.objects.get_or_create(
-            username='bob',
-            defaults={'email': 'bob@example.com'}
-        )
-        User.objects.filter(username='bob').update(
-            email='bob@example.com',
-            password=make_password('password123'),
-        )
+        # Borrado robusto: eliminar solo instancias válidas
+        for model in [User, Team, Activity, Workout]:
+            ids = list(model.objects.values_list('id', flat=True))
+            if ids:
+                model.objects.filter(id__in=ids).delete()
+        # Limpieza directa en MongoDB para usuarios corruptos (sin id)
+        try:
+            from djongo.database import connect
+            db = connect('octofit_db')
+            db['user'].delete_many({'_id': {'$exists': False}})
+        except Exception as exc:
+            logger.warning('No se pudo limpiar usuarios corruptos: %s', exc)
 
-        user3, _ = User.objects.get_or_create(
-            username='carol',
-            defaults={'email': 'carol@example.com'}
-        )
-        User.objects.filter(username='carol').update(
-            email='carol@example.com',
-            password=make_password('password123'),
-        )
+        # Crear equipos Marvel y DC
+        marvel, _ = Team.objects.get_or_create(name='Marvel')
+        dc, _ = Team.objects.get_or_create(name='DC')
 
-        # Re-fetch saved instances to support relational fields reliably.
-        user1 = User.objects.get(username='alice')
-        user2 = User.objects.get(username='bob')
-        user3 = User.objects.get(username='carol')
+        # Crear usuarios superhéroes
+        ironman, _ = User.objects.get_or_create(username='ironman', defaults={'email': 'ironman@marvel.com'})
+        User.objects.filter(username='ironman').update(email='ironman@marvel.com', password=make_password('1234'))
+        spiderman, _ = User.objects.get_or_create(username='spiderman', defaults={'email': 'spiderman@marvel.com'})
+        User.objects.filter(username='spiderman').update(email='spiderman@marvel.com', password=make_password('1234'))
+        batman, _ = User.objects.get_or_create(username='batman', defaults={'email': 'batman@dc.com'})
+        User.objects.filter(username='batman').update(email='batman@dc.com', password=make_password('1234'))
+        superman, _ = User.objects.get_or_create(username='superman', defaults={'email': 'superman@dc.com'})
+        User.objects.filter(username='superman').update(email='superman@dc.com', password=make_password('1234'))
 
-        # Crear equipos de ejemplo
-        team1, _ = Team.objects.get_or_create(name='Equipo Alpha')
-        team2, _ = Team.objects.get_or_create(name='Equipo Beta')
+        # Asignar usuarios a equipos
+        self._assign_team_members(marvel, [ironman, spiderman], [ironman.username, spiderman.username])
+        self._assign_team_members(dc, [batman, superman], [batman.username, superman.username])
 
-        # Asignar usuarios a equipos por username para compatibilidad con Mongo.
-        self._assign_team_members(team1, [user1, user2], [user1.username, user2.username])
-        self._assign_team_members(team2, [user3], [user3.username])
+        # Crear actividades
+        self._ensure_activity(ironman, 'run', 30, 300, date(2024, 1, 1))
+        self._ensure_activity(spiderman, 'cycle', 45, 400, date(2024, 1, 2))
+        self._ensure_activity(batman, 'swim', 60, 500, date(2024, 1, 3))
+        self._ensure_activity(superman, 'run', 50, 450, date(2024, 1, 4))
 
-        # Crear actividades de ejemplo
-        self._ensure_activity(user1, 'Correr', 30, 250, date(2024, 1, 1))
-        self._ensure_activity(user2, 'Natacion', 45, 400, date(2024, 1, 2))
-        self._ensure_activity(user3, 'Ciclismo', 60, 500, date(2024, 1, 3))
-
-        # Crear workouts de ejemplo
+        # Crear workouts
         workout1, _ = Workout.objects.get_or_create(
-            name='Cardio Blast',
-            defaults={
-                'description': 'Rutina de cardio para resistencia y quema de calorias.',
-                'difficulty': 'Medium',
-            },
+            name='Full Body',
+            defaults={'description': 'Entrenamiento completo', 'difficulty': 'Medium'},
         )
         workout2, _ = Workout.objects.get_or_create(
-            name='Strength Builder',
-            defaults={
-                'description': 'Entrenamiento de fuerza para todo el cuerpo.',
-                'difficulty': 'Hard',
-            },
-        )
-        workout3, _ = Workout.objects.get_or_create(
-            name='Daily Mobility',
-            defaults={
-                'description': 'Sesion suave para movilidad y recuperacion activa.',
-                'difficulty': 'Easy',
-            },
+            name='Cardio',
+            defaults={'description': 'Entrenamiento cardiovascular', 'difficulty': 'Easy'},
         )
 
-        # Mantener best-effort por compatibilidad de IDs entre datos legacy y djongo.
+        # Asignar workouts sugeridos
         try:
-            workout1.suggested_for.set([user1, user3])
-            workout2.suggested_for.set([user2])
-            workout3.suggested_for.set([user1, user2, user3])
-        except Exception:
-            pass
+            workout1.suggested_for.set([ironman, batman])
+            workout2.suggested_for.set([spiderman, superman])
+        except Exception as exc:
+            logger.warning('No se pudieron asignar sugerencias de workout: %s', exc)
 
         # Recalcular leaderboard persistido desde actividades y equipos.
         call_command('rebuild_leaderboard', week='2024-01-07')
 
-        self.stdout.write(self.style.SUCCESS('La base de datos ha sido poblada con datos de ejemplo.'))
+        self.stdout.write(self.style.SUCCESS('La base de datos ha sido poblada con superhéroes y equipos Marvel/DC.'))

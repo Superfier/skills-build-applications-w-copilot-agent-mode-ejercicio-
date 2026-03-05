@@ -1,6 +1,7 @@
-import base64
-import json
-from urllib.parse import unquote
+import logging
+
+from bson import ObjectId
+from bson.errors import InvalidId
 
 from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes
@@ -14,12 +15,40 @@ from .serializers import UserSerializer, TeamSerializer, ActivitySerializer, Wor
 from .authentication import SignedTokenAuthentication
 from .leaderboard_service import rebuild_weekly_leaderboard
 
+
+logger = logging.getLogger(__name__)
+
+
+def _resolve_object_id(identifier):
+    """Convert a string identifier to a BSON ObjectId for pk lookup."""
+    try:
+        return ObjectId(str(identifier))
+    except (InvalidId, TypeError):
+        return None
+
+
+class ObjectIdLookupMixin:
+    """Mixin that resolves string URL identifiers to ObjectId for pk lookup."""
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        identifier = self.kwargs.get(self.lookup_url_kwarg or self.lookup_field)
+        oid = _resolve_object_id(identifier)
+        if oid is not None:
+            obj = queryset.filter(pk=oid).first()
+            if obj is not None:
+                self.check_object_permissions(self.request, obj)
+                return obj
+        raise Http404
+
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
-class TeamViewSet(viewsets.ModelViewSet):
+
+class TeamViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
     permission_classes = [IsAuthenticated]
@@ -27,61 +56,7 @@ class TeamViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(members=[self.request.user.username])
 
-    def get_object(self):
-        queryset = self.filter_queryset(self.get_queryset())
-        identifier = self.kwargs.get(self.lookup_url_kwarg or self.lookup_field)
-
-        # Standard pk lookup for normal rows.
-        obj = None
-        try:
-            obj = queryset.filter(pk=identifier).first()
-        except Exception:
-            obj = None
-        if obj is not None:
-            self.check_object_permissions(self.request, obj)
-            return obj
-
-        # Legacy fallback when API ids are name-based.
-        if isinstance(identifier, str) and identifier.startswith('name:'):
-            team_name = unquote(identifier.split(':', 1)[1])
-            obj = queryset.filter(name=team_name).order_by('-created_at').first()
-            if obj is not None:
-                self.check_object_permissions(self.request, obj)
-                return obj
-
-        raise Http404
-
-    @staticmethod
-    def _legacy_filter_for_instance(obj):
-        return Team.objects.filter(name=obj.name, created_at=obj.created_at)
-
-    def partial_update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-
-        if getattr(instance, 'pk', None) is None:
-            updated = self._legacy_filter_for_instance(instance).update(**serializer.validated_data)
-            if not updated:
-                raise Http404
-            for field, value in serializer.validated_data.items():
-                setattr(instance, field, value)
-            return Response(self.get_serializer(instance).data)
-
-        self.perform_update(serializer)
-        return Response(serializer.data)
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if getattr(instance, 'pk', None) is None:
-            deleted, _ = self._legacy_filter_for_instance(instance).delete()
-            if not deleted:
-                raise Http404
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        self.perform_destroy(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-class ActivityViewSet(viewsets.ModelViewSet):
+class ActivityViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
     queryset = Activity.objects.all()
     serializer_class = ActivitySerializer
     permission_classes = [IsAuthenticated]
@@ -106,135 +81,11 @@ class ActivityViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user.username)
 
-    def get_object(self):
-        queryset = self.filter_queryset(self.get_queryset())
-        identifier = self.kwargs.get(self.lookup_url_kwarg or self.lookup_field)
 
-        obj = None
-        try:
-            obj = queryset.filter(pk=identifier).first()
-        except Exception:
-            obj = None
-        if obj is not None:
-            self.check_object_permissions(self.request, obj)
-            return obj
-
-        if isinstance(identifier, str) and identifier.startswith('legacy:'):
-            token = identifier.split(':', 1)[1]
-            try:
-                payload_json = base64.urlsafe_b64decode(token.encode('ascii')).decode('utf-8')
-                payload = json.loads(payload_json)
-                obj = queryset.filter(
-                    user=payload.get('user', ''),
-                    activity_type=payload.get('activity_type', ''),
-                    date=payload.get('date', ''),
-                    duration=int(payload.get('duration', 0) or 0),
-                    calories=float(payload.get('calories', 0) or 0),
-                ).order_by('-date').first()
-                if obj is not None:
-                    self.check_object_permissions(self.request, obj)
-                    return obj
-            except Exception:
-                pass
-
-        raise Http404
-
-    @staticmethod
-    def _legacy_filter_for_instance(obj):
-        return Activity.objects.filter(
-            user=obj.user,
-            activity_type=obj.activity_type,
-            duration=obj.duration,
-            calories=obj.calories,
-            date=obj.date,
-        )
-
-    def partial_update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-
-        if getattr(instance, 'pk', None) is None:
-            updated = self._legacy_filter_for_instance(instance).update(**serializer.validated_data)
-            if not updated:
-                raise Http404
-            for field, value in serializer.validated_data.items():
-                setattr(instance, field, value)
-            return Response(self.get_serializer(instance).data)
-
-        self.perform_update(serializer)
-        return Response(serializer.data)
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if getattr(instance, 'pk', None) is None:
-            deleted, _ = self._legacy_filter_for_instance(instance).delete()
-            if not deleted:
-                raise Http404
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        self.perform_destroy(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-class WorkoutViewSet(viewsets.ModelViewSet):
+class WorkoutViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
     queryset = Workout.objects.all()
     serializer_class = WorkoutSerializer
     permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        queryset = self.filter_queryset(self.get_queryset())
-        identifier = self.kwargs.get(self.lookup_url_kwarg or self.lookup_field)
-
-        obj = None
-        try:
-            obj = queryset.filter(pk=identifier).first()
-        except Exception:
-            obj = None
-        if obj is not None:
-            self.check_object_permissions(self.request, obj)
-            return obj
-
-        if isinstance(identifier, str) and identifier.startswith('name:'):
-            workout_name = unquote(identifier.split(':', 1)[1])
-            obj = queryset.filter(name=workout_name).first()
-            if obj is not None:
-                self.check_object_permissions(self.request, obj)
-                return obj
-
-        raise Http404
-
-    @staticmethod
-    def _legacy_filter_for_instance(obj):
-        return Workout.objects.filter(
-            name=obj.name,
-            description=obj.description,
-            difficulty=obj.difficulty,
-        )
-
-    def partial_update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-
-        if getattr(instance, 'pk', None) is None:
-            updated = self._legacy_filter_for_instance(instance).update(**serializer.validated_data)
-            if not updated:
-                raise Http404
-            for field, value in serializer.validated_data.items():
-                setattr(instance, field, value)
-            return Response(self.get_serializer(instance).data)
-
-        self.perform_update(serializer)
-        return Response(serializer.data)
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if getattr(instance, 'pk', None) is None:
-            deleted, _ = self._legacy_filter_for_instance(instance).delete()
-            if not deleted:
-                raise Http404
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        self.perform_destroy(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class LeaderboardViewSet(viewsets.ModelViewSet):
     queryset = Leaderboard.objects.all()
@@ -264,8 +115,8 @@ class LeaderboardViewSet(viewsets.ModelViewSet):
         if should_rebuild and has_teams:
             try:
                 rebuild_weekly_leaderboard()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning('Leaderboard rebuild skipped due to error: %s', exc)
 
         return super().list(request, *args, **kwargs)
 
