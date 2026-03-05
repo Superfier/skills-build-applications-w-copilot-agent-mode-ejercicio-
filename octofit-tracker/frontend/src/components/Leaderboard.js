@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getApiBaseUrl, fetchWithAuth } from '../api';
 
 const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -8,19 +9,17 @@ const Leaderboard = () => {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const codespaceName = process.env.REACT_APP_CODESPACE_NAME;
-        const apiUrl = codespaceName
-          ? `https://${codespaceName}-8000.app.github.dev/api/leaderboard/`
-          : 'http://localhost:8000/api/leaderboard/';
-        console.log('Fetching leaderboard from:', apiUrl);
+        const apiUrl = `${getApiBaseUrl()}/leaderboard/`;
         
-        const response = await fetch(apiUrl);
+        const response = await fetchWithAuth(apiUrl);
         if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Unauthorized. Please login first.');
+          }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('Leaderboard data:', data);
         
         // Handle both paginated (.results) and plain array responses
         const leaderboardList = data.results || data;
@@ -107,7 +106,7 @@ const Leaderboard = () => {
                     <tbody>
                       {leaderboard.map((entry, index) => (
                         <tr 
-                          key={entry.id} 
+                          key={entry.id || `${entry.team}-${entry.week}-${index}`} 
                           className={index === 0 ? 'table-success' : index === 1 ? 'table-info' : index === 2 ? 'table-warning' : ''}
                         >
                           <td className="text-center align-middle">

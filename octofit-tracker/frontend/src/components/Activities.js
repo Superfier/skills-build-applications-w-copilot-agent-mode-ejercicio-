@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getApiBaseUrl, fetchWithAuth } from '../api';
 
 const Activities = () => {
   const [activities, setActivities] = useState([]);
@@ -8,19 +9,17 @@ const Activities = () => {
   useEffect(() => {
     const fetchActivities = async () => {
       try {
-        const codespaceName = process.env.REACT_APP_CODESPACE_NAME;
-        const apiUrl = codespaceName
-          ? `https://${codespaceName}-8000.app.github.dev/api/activities/`
-          : 'http://localhost:8000/api/activities/';
-        console.log('Fetching activities from:', apiUrl);
+        const apiUrl = `${getApiBaseUrl()}/activities/`;
         
-        const response = await fetch(apiUrl);
+        const response = await fetchWithAuth(apiUrl);
         if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Unauthorized. Please login first.');
+          }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('Activities data:', data);
         
         // Handle both paginated (.results) and plain array responses
         const activitiesList = data.results || data;
@@ -97,10 +96,10 @@ const Activities = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {activities.map((activity) => (
-                        <tr key={activity.id}>
+                      {activities.map((activity, index) => (
+                        <tr key={activity.id || `${activity.user}-${activity.date}-${index}`}>
                           <td className="text-center align-middle">
-                            <span className="badge bg-warning text-dark">{activity.id}</span>
+                            <span className="badge bg-warning text-dark">{activity.id || index + 1}</span>
                           </td>
                           <td className="align-middle">{activity.user}</td>
                           <td className="align-middle">

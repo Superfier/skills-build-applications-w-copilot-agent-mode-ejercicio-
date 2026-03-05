@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getApiBaseUrl, fetchWithAuth } from '../api';
 
 const Teams = () => {
   const [teams, setTeams] = useState([]);
@@ -8,19 +9,17 @@ const Teams = () => {
   useEffect(() => {
     const fetchTeams = async () => {
       try {
-        const codespaceName = process.env.REACT_APP_CODESPACE_NAME;
-        const apiUrl = codespaceName
-          ? `https://${codespaceName}-8000.app.github.dev/api/teams/`
-          : 'http://localhost:8000/api/teams/';
-        console.log('Fetching teams from:', apiUrl);
+        const apiUrl = `${getApiBaseUrl()}/teams/`;
         
-        const response = await fetch(apiUrl);
+        const response = await fetchWithAuth(apiUrl);
         if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Unauthorized. Please login first.');
+          }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('Teams data:', data);
         
         // Handle both paginated (.results) and plain array responses
         const teamsList = data.results || data;
@@ -95,10 +94,10 @@ const Teams = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {teams.map((team) => (
-                        <tr key={team.id}>
+                      {teams.map((team, index) => (
+                        <tr key={team.id || team.name || index}>
                           <td className="text-center align-middle">
-                            <span className="badge bg-success">{team.id}</span>
+                            <span className="badge bg-success">{team.id || index + 1}</span>
                           </td>
                           <td className="align-middle">
                             <strong>{team.name}</strong>

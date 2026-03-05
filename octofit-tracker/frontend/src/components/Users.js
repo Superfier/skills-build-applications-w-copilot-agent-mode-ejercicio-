@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getApiBaseUrl, fetchWithAuth } from '../api';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -8,19 +9,17 @@ const Users = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const codespaceName = process.env.REACT_APP_CODESPACE_NAME;
-        const apiUrl = codespaceName
-          ? `https://${codespaceName}-8000.app.github.dev/api/users/`
-          : 'http://localhost:8000/api/users/';
-        console.log('Fetching users from:', apiUrl);
+        const apiUrl = `${getApiBaseUrl()}/users/`;
         
-        const response = await fetch(apiUrl);
+        const response = await fetchWithAuth(apiUrl);
         if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Unauthorized. Please login first.');
+          }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('Users data:', data);
         
         // Handle both paginated (.results) and plain array responses
         const usersList = data.results || data;
@@ -96,10 +95,10 @@ const Users = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {users.map((user) => (
-                        <tr key={user.id}>
+                      {users.map((user, index) => (
+                        <tr key={user.id || user.username || index}>
                           <td className="text-center align-middle">
-                            <span className="badge bg-secondary">{user.id}</span>
+                            <span className="badge bg-secondary">{user.id || user.username || index + 1}</span>
                           </td>
                           <td className="align-middle">
                             <strong>{user.username}</strong>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getApiBaseUrl, fetchWithAuth } from '../api';
 
 const Workouts = () => {
   const [workouts, setWorkouts] = useState([]);
@@ -8,19 +9,17 @@ const Workouts = () => {
   useEffect(() => {
     const fetchWorkouts = async () => {
       try {
-        const codespaceName = process.env.REACT_APP_CODESPACE_NAME;
-        const apiUrl = codespaceName
-          ? `https://${codespaceName}-8000.app.github.dev/api/workouts/`
-          : 'http://localhost:8000/api/workouts/';
-        console.log('Fetching workouts from:', apiUrl);
+        const apiUrl = `${getApiBaseUrl()}/workouts/`;
         
-        const response = await fetch(apiUrl);
+        const response = await fetchWithAuth(apiUrl);
         if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Unauthorized. Please login first.');
+          }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('Workouts data:', data);
         
         // Handle both paginated (.results) and plain array responses
         const workoutsList = data.results || data;
@@ -84,8 +83,8 @@ const Workouts = () => {
 
       {!loading && !error && workouts.length > 0 && (
         <div className="row">
-          {workouts.map((workout) => (
-            <div key={workout.id} className="col-md-6 col-lg-4 mb-4">
+          {workouts.map((workout, index) => (
+            <div key={workout.id || workout.name || index} className="col-md-6 col-lg-4 mb-4">
               <div className="card h-100 shadow-sm border-0 workout-card">
                 <div className={`card-header bg-${getDifficultyColor(workout.difficulty)} text-white`}>
                   <h5 className="card-title mb-0">{workout.name}</h5>
