@@ -144,6 +144,64 @@ class ProtectedApiTests(APITestCase):
         self.assertEqual(len(combined_filter_response.data), 1)
         self.assertEqual(combined_filter_response.data[0]['activity_type'], 'swim')
 
+    def test_workout_create_update_and_delete(self):
+        self.client.force_authenticate(user=self.user)
+
+        create_response = self.client.post(
+            '/api/workouts/',
+            {
+                'name': 'Strength Builder',
+                'description': 'Compound lift routine',
+                'difficulty': 'Medium',
+            },
+            format='json',
+        )
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        workout = Workout.objects.get(name='Strength Builder')
+
+        update_response = self.client.patch(
+            f'/api/workouts/{workout.pk}/',
+            {'difficulty': 'Hard'},
+            format='json',
+        )
+        self.assertEqual(update_response.status_code, status.HTTP_200_OK)
+        workout.refresh_from_db()
+        self.assertEqual(workout.difficulty, 'Hard')
+
+        delete_response = self.client.delete(f'/api/workouts/{workout.pk}/')
+        self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Workout.objects.filter(pk=workout.pk).exists())
+
+    def test_leaderboard_rebuild_creates_ranked_rows(self):
+        self.client.force_authenticate(user=self.user)
+        teammate = User.objects.create_user(username='teammate', password='pass12345')
+
+        Team.objects.create(name='Blue Team', members=[self.user.username])
+        Team.objects.create(name='Red Team', members=[teammate.username])
+
+        Activity.objects.create(
+            user=self.user.username,
+            activity_type='run',
+            duration=30,
+            calories=300,
+            date='2024-03-01',
+        )
+        Activity.objects.create(
+            user=teammate.username,
+            activity_type='bike',
+            duration=45,
+            calories=150,
+            date='2024-03-02',
+        )
+
+        response = self.client.get('/api/leaderboard/?rebuild=1')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]['team_name'], 'Blue Team')
+        self.assertEqual(response.data[0]['score'], 300)
+        self.assertEqual(response.data[1]['team_name'], 'Red Team')
+        self.assertEqual(response.data[1]['score'], 150)
+
 class DataModelSmokeTests(APITestCase):
     def test_create_domain_objects(self):
         user = User.objects.create_user(username='user1', password='pass12345')

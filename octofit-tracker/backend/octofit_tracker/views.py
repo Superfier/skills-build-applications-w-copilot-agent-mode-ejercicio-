@@ -62,9 +62,22 @@ class LeaderboardViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         force_rebuild = request.query_params.get('rebuild') == '1'
-        should_rebuild = force_rebuild or not Leaderboard.objects.exists()
+        has_leaderboard_rows = False
+        try:
+            has_leaderboard_rows = Leaderboard.objects.count() > 0
+        except Exception:
+            has_leaderboard_rows = False
 
-        if should_rebuild and Team.objects.exists():
+        should_rebuild = force_rebuild or not has_leaderboard_rows
+        has_teams = False
+
+        try:
+            # djongo can raise on QuerySet.exists() for some queries.
+            has_teams = Team.objects.count() > 0
+        except Exception:
+            has_teams = False
+
+        if should_rebuild and has_teams:
             try:
                 rebuild_weekly_leaderboard()
             except Exception:
