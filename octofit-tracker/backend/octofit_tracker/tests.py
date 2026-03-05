@@ -144,7 +144,6 @@ class ProtectedApiTests(APITestCase):
         self.assertEqual(len(combined_filter_response.data), 1)
         self.assertEqual(combined_filter_response.data[0]['activity_type'], 'swim')
 
-
 class DataModelSmokeTests(APITestCase):
     def test_create_domain_objects(self):
         user = User.objects.create_user(username='user1', password='pass12345')
@@ -157,7 +156,7 @@ class DataModelSmokeTests(APITestCase):
             date=date(2024, 1, 1),
         )
         Workout.objects.create(name='Cardio', description='Cardio workout', difficulty='Easy')
-        Leaderboard.objects.create(team=team, score=100, week=date(2024, 1, 7))
+        Leaderboard.objects.create(team_name=team.name, score=100, week=date(2024, 1, 7))
 
         self.assertEqual(User.objects.count(), 1)
         self.assertEqual(Team.objects.count(), 1)

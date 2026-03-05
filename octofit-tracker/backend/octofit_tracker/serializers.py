@@ -45,8 +45,10 @@ class WorkoutSerializer(ObjectIdStringMixin, serializers.ModelSerializer):
 
 class LeaderboardSerializer(ObjectIdStringMixin, serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
-    team = serializers.PrimaryKeyRelatedField(read_only=True, pk_field=serializers.CharField())
-    team_name = serializers.CharField(source='team.name', read_only=True)
+    team = serializers.SerializerMethodField()
+
+    def get_team(self, obj):
+        return obj.team_name
 
     class Meta:
         model = Leaderboard

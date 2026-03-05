@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate
 from .models import User, Team, Activity, Workout, Leaderboard
 from .serializers import UserSerializer, TeamSerializer, ActivitySerializer, WorkoutSerializer, LeaderboardSerializer
 from .authentication import SignedTokenAuthentication
+from .leaderboard_service import rebuild_weekly_leaderboard
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -55,6 +56,21 @@ class LeaderboardViewSet(viewsets.ModelViewSet):
     queryset = Leaderboard.objects.all()
     serializer_class = LeaderboardSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return super().get_queryset().order_by('-score', 'week')
+
+    def list(self, request, *args, **kwargs):
+        force_rebuild = request.query_params.get('rebuild') == '1'
+        should_rebuild = force_rebuild or not Leaderboard.objects.exists()
+
+        if should_rebuild and Team.objects.exists():
+            try:
+                rebuild_weekly_leaderboard()
+            except Exception:
+                pass
+
+        return super().list(request, *args, **kwargs)
 
 
 @api_view(['POST'])
