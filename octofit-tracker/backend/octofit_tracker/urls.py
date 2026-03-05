@@ -16,7 +16,17 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UserViewSet, TeamViewSet, ActivityViewSet, WorkoutViewSet, LeaderboardViewSet, api_root
+from .views import (
+    UserViewSet,
+    TeamViewSet,
+    ActivityViewSet,
+    WorkoutViewSet,
+    LeaderboardViewSet,
+    api_root,
+    register,
+    login,
+    logout,
+)
 import os
 from django.http import JsonResponse
 
@@ -42,5 +52,9 @@ def api_url_info(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', api_url_info, name='api-url-info'),
+    path('api/', api_root, name='api-root'),
+    path('api/auth/register/', register, name='register'),
+    path('api/auth/login/', login, name='login'),
+    path('api/auth/logout/', logout, name='logout'),
     path('api/', include(router.urls)),
 ]
