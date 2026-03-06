@@ -51,18 +51,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        # Borrado robusto: eliminar solo instancias válidas
-        for model in [User, Team, Activity, Workout]:
-            ids = list(model.objects.values_list('pk', flat=True))
-            if ids:
-                model.objects.filter(pk__in=ids).delete()
-        # Limpieza directa en MongoDB para usuarios corruptos (sin id)
-        try:
-            from djongo.database import connect
-            db = connect('octofit_db')
-            db['user'].delete_many({'_id': {'$exists': False}})
-        except Exception as exc:
-            logger.warning('No se pudo limpiar usuarios corruptos: %s', exc)
+        # Borrado robusto vía pymongo para evitar problemas con id=None en Djongo
+        import pymongo
+        client = pymongo.MongoClient('localhost', 27017)
+        db = client['octofit_db']
+        for collection in ['octofit_tracker_user', 'octofit_tracker_team',
+                           'octofit_tracker_activity', 'octofit_tracker_workout',
+                           'octofit_tracker_leaderboard']:
+            db[collection].delete_many({})
+        # Ensure unique index on username to prevent duplicates
+        db['octofit_tracker_user'].create_index('username', unique=True)
 
         # Crear equipos Marvel y DC
         marvel, _ = Team.objects.get_or_create(name='Marvel')
