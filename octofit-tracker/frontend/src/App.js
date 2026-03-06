@@ -9,7 +9,7 @@ import Workouts from './components/Workouts';
 import Leaderboard from './components/Leaderboard';
 import Profile from './components/Profile';
 import Dashboard from './components/Dashboard';
-import { getApiBaseUrl, getAuthToken, setAuthToken, fetchWithAuth } from './api';
+import { getApiBaseUrl, getAuthToken, setAuthToken, setCurrentUser, getCurrentUser, fetchWithAuth } from './api';
 import { ToastProvider } from './components/ToastProvider';
 
 function Home() {
@@ -71,6 +71,7 @@ function AuthPanel({ onAuthenticated }) {
       }
 
       setAuthToken(data.token);
+      setCurrentUser(data.user);
       onAuthenticated();
     } catch (authError) {
       setError(authError.message);
@@ -131,6 +132,8 @@ function AppContent() {
   const location = useLocation();
   const [authVersion, setAuthVersion] = useState(0);
   const isAuthenticated = Boolean(getAuthToken());
+  const currentUser = getCurrentUser();
+  const isAdmin = Boolean(currentUser && currentUser.is_staff);
 
   const isActive = (path) => location.pathname === path;
 
@@ -149,6 +152,7 @@ function AppContent() {
       // Ignore network errors and clear local token anyway for demo usability.
     } finally {
       setAuthToken(null);
+      setCurrentUser(null);
       setAuthVersion((v) => v + 1);
     }
   };
@@ -222,10 +226,10 @@ function AppContent() {
         ) : (
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/teams" element={<Teams />} />
-            <Route path="/activities" element={<Activities />} />
-            <Route path="/workouts" element={<Workouts />} />
+            <Route path="/users" element={<Users isAdmin={isAdmin} />} />
+            <Route path="/teams" element={<Teams isAdmin={isAdmin} currentUser={currentUser} />} />
+            <Route path="/activities" element={<Activities isAdmin={isAdmin} currentUser={currentUser} />} />
+            <Route path="/workouts" element={<Workouts isAdmin={isAdmin} />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/dashboard" element={<Dashboard />} />

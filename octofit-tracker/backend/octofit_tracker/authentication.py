@@ -13,6 +13,9 @@ class SignedTokenAuthentication(authentication.BaseAuthentication):
     def issue_token(cls, user):
         return signing.dumps({'username': user.username}, salt=cls.salt)
 
+    def authenticate_header(self, request):
+        return self.keyword
+
     def authenticate(self, request):
         auth_header = authentication.get_authorization_header(request).decode('utf-8')
         if not auth_header:

@@ -14,6 +14,7 @@ from .models import User, Team, Activity, Workout, Leaderboard
 from .serializers import UserSerializer, TeamSerializer, ActivitySerializer, WorkoutSerializer, LeaderboardSerializer
 from .authentication import SignedTokenAuthentication
 from .leaderboard_service import rebuild_weekly_leaderboard
+from .permissions import IsAdminUser, IsAdminOrReadOnly, IsAdminOrJoinLeaveTeam, IsOwnerOrAdmin
 
 
 logger = logging.getLogger(__name__)
@@ -45,21 +46,42 @@ class ObjectIdLookupMixin:
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('id')
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrReadOnly]
 
 
 class TeamViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrJoinLeaveTeam]
 
     def perform_create(self, serializer):
         serializer.save(members=[self.request.user.username])
 
+    def perform_update(self, serializer):
+        # Non-admin users can only add/remove themselves from members.
+        if not self.request.user.is_staff:
+            new_members = serializer.validated_data.get('members')
+            if new_members is None:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied('You can only join or leave a team.')
+            old_members = set(serializer.instance.members or [])
+            new_members_set = set(new_members)
+            added = new_members_set - old_members
+            removed = old_members - new_members_set
+            username = self.request.user.username
+            # Only allow adding/removing yourself
+            if (added and added != {username}) or (removed and removed != {username}):
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied('You can only add or remove yourself from a team.')
+            # Ensure only members field is changed
+            serializer.save(members=list(new_members))
+            return
+        serializer.save()
+
 class ActivityViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
     queryset = Activity.objects.all().order_by('-date')
     serializer_class = ActivitySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrAdmin]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -69,7 +91,7 @@ class ActivityViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
         date_to = self.request.query_params.get('date_to')
 
         if user_value:
-            queryset = queryset.filter(user=user_value)
+            queryset = queryset.filter(user__icontains=user_value)
         if date_value:
             queryset = queryset.filter(date=date_value)
         if date_from:
@@ -79,18 +101,19 @@ class ActivityViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user.username)
+        user = serializer.validated_data.get('user') or self.request.user.username
+        serializer.save(user=user)
 
 
 class WorkoutViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
     queryset = Workout.objects.all()
     serializer_class = WorkoutSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrReadOnly]
 
 class LeaderboardViewSet(viewsets.ModelViewSet):
     queryset = Leaderboard.objects.all()
     serializer_class = LeaderboardSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
         return super().get_queryset().order_by('-score', 'week')

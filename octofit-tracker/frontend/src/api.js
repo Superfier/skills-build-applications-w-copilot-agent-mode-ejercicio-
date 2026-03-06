@@ -51,13 +51,30 @@ export const setAuthToken = (token) => {
   localStorage.removeItem('octofit_token');
 };
 
+export const getCurrentUser = () => {
+  try {
+    const raw = localStorage.getItem('octofit_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+};
+
+export const setCurrentUser = (user) => {
+  if (user) {
+    localStorage.setItem('octofit_user', JSON.stringify(user));
+    return;
+  }
+  localStorage.removeItem('octofit_user');
+};
+
 export const authHeaders = () => {
   const token = getAuthToken();
   return token ? { Authorization: `Token ${token}` } : {};
 };
 
-export const fetchWithAuth = (url, options = {}) => {
-  return fetch(url, {
+export const fetchWithAuth = async (url, options = {}) => {
+  const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -65,6 +82,18 @@ export const fetchWithAuth = (url, options = {}) => {
       ...authHeaders(),
     },
   });
+
+  // Auto-clear invalid/expired token and reload to show login screen.
+  if (response.status === 401) {
+    const token = getAuthToken();
+    if (token) {
+      setAuthToken(null);
+      setCurrentUser(null);
+      window.location.reload();
+    }
+  }
+
+  return response;
 };
 
 export const requestJson = async (url, options = {}) => {

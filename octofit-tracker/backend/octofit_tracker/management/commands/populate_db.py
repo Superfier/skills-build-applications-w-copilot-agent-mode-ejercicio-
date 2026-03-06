@@ -62,6 +62,15 @@ class Command(BaseCommand):
         # Ensure unique index on username to prevent duplicates
         db['octofit_tracker_user'].create_index('username', unique=True)
 
+        # Crear usuario administrador
+        admin, _ = User.objects.get_or_create(username='admin', defaults={'email': 'admin@octofit.com'})
+        User.objects.filter(username='admin').update(
+            email='admin@octofit.com',
+            password=make_password('admin1234'),
+            is_staff=True,
+            is_superuser=True,
+        )
+
         # Crear equipos Marvel y DC
         marvel, _ = Team.objects.get_or_create(name='Marvel')
         dc, _ = Team.objects.get_or_create(name='DC')

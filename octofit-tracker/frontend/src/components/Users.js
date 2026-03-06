@@ -3,7 +3,7 @@ import { getApiBaseUrl, fetchWithAuth } from '../api';
 import Pagination from './Pagination';
 import { TableSkeleton } from './Skeleton';
 
-const Users = () => {
+const Users = ({ isAdmin = false }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

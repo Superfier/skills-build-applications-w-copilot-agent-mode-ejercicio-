@@ -3,7 +3,7 @@ import { getApiBaseUrl, requestJson } from '../api';
 import { useToast } from './ToastProvider';
 import ConfirmModal from './ConfirmModal';
 
-const Teams = () => {
+const Teams = ({ isAdmin = false, currentUser = null }) => {
   const addToast = useToast();
   const [teams, setTeams] = useState([]);
   const [users, setUsers] = useState([]);
@@ -185,6 +185,7 @@ const Teams = () => {
             <i className="bi bi-diagram-3-fill me-2"></i>Teams
           </h1>
           <p className="lead text-muted">Manage and view all teams</p>
+          {isAdmin && (
           <form className="mt-3" onSubmit={handleCreateTeam}>
             <div className="input-group">
               <input
@@ -198,6 +199,7 @@ const Teams = () => {
               <button className="btn btn-primary" type="submit" disabled={saving}>Add</button>
             </div>
           </form>
+          )}
         </div>
       </div>
 
@@ -274,7 +276,7 @@ const Teams = () => {
                             </td>
                             <td className="text-center align-middle">
                               <div className="d-flex justify-content-center gap-2">
-                                {isEditing ? (
+                                {isAdmin && isEditing ? (
                                   <>
                                     <button
                                       type="button"
@@ -293,7 +295,7 @@ const Teams = () => {
                                       Cancel
                                     </button>
                                   </>
-                                ) : (
+                                ) : isAdmin ? (
                                   <>
                                     <button
                                       type="button"
@@ -312,6 +314,16 @@ const Teams = () => {
                                       Delete
                                     </button>
                                   </>
+                                ) : (
+                                  (() => {
+                                    const myUsername = currentUser?.username;
+                                    const isMember = Array.isArray(team.members) && myUsername && team.members.includes(myUsername);
+                                    return isMember ? (
+                                      <button type="button" className="btn btn-sm btn-outline-warning" onClick={() => removeMember(team, myUsername)} disabled={saving}>Leave</button>
+                                    ) : (
+                                      <button type="button" className="btn btn-sm btn-outline-success" onClick={() => addMember(team, myUsername)} disabled={saving || !myUsername}>Join</button>
+                                    );
+                                  })()
                                 )}
                               </div>
                             </td>
@@ -325,11 +337,12 @@ const Teams = () => {
                                     {(Array.isArray(team.members) ? team.members : []).map((m) => (
                                       <span key={m} className="badge bg-secondary d-flex align-items-center gap-1">
                                         {m}
-                                        <button type="button" className="btn-close btn-close-white" style={{ fontSize: '0.5rem' }} onClick={() => removeMember(team, m)} disabled={saving} aria-label="Remove"></button>
+                                        {isAdmin && <button type="button" className="btn-close btn-close-white" style={{ fontSize: '0.5rem' }} onClick={() => removeMember(team, m)} disabled={saving} aria-label="Remove"></button>}
                                       </span>
                                     ))}
                                     {(!team.members || team.members.length === 0) && <span className="text-muted">No members yet</span>}
                                   </div>
+                                  {isAdmin && (
                                   <div className="input-group input-group-sm" style={{ maxWidth: 320 }}>
                                     <input className="form-control" placeholder="Add username" value={memberInput} onChange={(e) => setMemberInput(e.target.value)} list="user-suggestions" />
                                     <datalist id="user-suggestions">
@@ -337,6 +350,7 @@ const Teams = () => {
                                     </datalist>
                                     <button className="btn btn-success" type="button" onClick={() => addMember(team, memberInput)} disabled={saving || !memberInput.trim()}>Add</button>
                                   </div>
+                                  )}
                                 </div>
                               </td>
                             </tr>

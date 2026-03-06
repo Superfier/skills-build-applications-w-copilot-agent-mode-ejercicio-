@@ -6,7 +6,7 @@ import { CardSkeleton } from './Skeleton';
 
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
 
-const Workouts = () => {
+const Workouts = ({ isAdmin = false }) => {
   const addToast = useToast();
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -123,8 +123,9 @@ const Workouts = () => {
           <h1 className="display-5 fw-bold text-dark">
             <i className="bi bi-dumbbell me-2"></i>Workouts
           </h1>
-          <p className="lead text-muted">Create and manage workout routines</p>
+          <p className="lead text-muted">{isAdmin ? 'Create and manage workout routines' : 'Browse workout routines'}</p>
 
+          {isAdmin && (
           <form className="row g-2 mt-2" onSubmit={handleCreate}>
             <div className="col-md-3">
               <input className="form-control" placeholder="Workout name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required maxLength={100} />
@@ -141,6 +142,7 @@ const Workouts = () => {
               <button className="btn btn-warning" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Add'}</button>
             </div>
           </form>
+          )}
         </div>
       </div>
 
@@ -212,6 +214,7 @@ const Workouts = () => {
                       </>
                     )}
                   </div>
+                  {isAdmin && (
                   <div className="card-footer bg-light d-flex gap-2">
                     {isEditing ? (
                       <>
@@ -229,6 +232,7 @@ const Workouts = () => {
                       </>
                     )}
                   </div>
+                  )}
                 </div>
               </div>
             );

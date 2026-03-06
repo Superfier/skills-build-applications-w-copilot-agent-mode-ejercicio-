@@ -20,7 +20,7 @@ class UserSerializer(ObjectIdStringMixin, serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_staff']
 
 class TeamSerializer(ObjectIdStringMixin, serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
@@ -32,7 +32,7 @@ class TeamSerializer(ObjectIdStringMixin, serializers.ModelSerializer):
 
 class ActivitySerializer(ObjectIdStringMixin, serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
-    user = serializers.CharField(read_only=True)
+    user = serializers.CharField(required=False)
     duration = serializers.IntegerField(min_value=1, max_value=1440)
     calories = serializers.FloatField(min_value=0, max_value=99999)
 

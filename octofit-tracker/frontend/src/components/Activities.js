@@ -3,7 +3,7 @@ import { getApiBaseUrl, requestJson } from '../api';
 import { useToast } from './ToastProvider';
 import ConfirmModal from './ConfirmModal';
 
-const Activities = () => {
+const Activities = ({ isAdmin = false, currentUser = null }) => {
   const addToast = useToast();
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +22,9 @@ const Activities = () => {
     date_from: '',
     date_to: '',
   });
+  const [allUsers, setAllUsers] = useState([]);
   const [form, setForm] = useState({
+    user: '',
     activity_type: 'run',
     duration: 30,
     calories: 250,
@@ -61,6 +63,17 @@ const Activities = () => {
     fetchActivities();
   }, [fetchActivities]);
 
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const data = await requestJson(`${getApiBaseUrl()}/users/`);
+        const list = data.results || data;
+        setAllUsers(Array.isArray(list) ? list : []);
+      } catch (_) { /* ignore */ }
+    };
+    loadUsers();
+  }, []);
+
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -83,14 +96,18 @@ const Activities = () => {
     event.preventDefault();
     setSaving(true);
     try {
-      await requestJson(`${getApiBaseUrl()}/activities/`, {
-        method: 'POST',
-        body: JSON.stringify({
+      const body = {
           activity_type: form.activity_type,
           duration: Number(form.duration),
           calories: Number(form.calories),
           date: form.date,
-        }),
+        };
+      if (form.user.trim()) {
+        body.user = form.user.trim();
+      }
+      await requestJson(`${getApiBaseUrl()}/activities/`, {
+        method: 'POST',
+        body: JSON.stringify(body),
       });
       addToast('Activity created successfully!');
       await fetchActivities();
@@ -204,9 +221,14 @@ const Activities = () => {
                     name="user"
                     className="form-control"
                     placeholder="Filter by username"
+                    list="activity-user-list"
                     value={filters.user}
                     onChange={handleFilterChange}
+                    autoComplete="off"
                   />
+                  <datalist id="activity-user-list">
+                    {allUsers.map(u => <option key={u.username} value={u.username} />)}
+                  </datalist>
                 </div>
                 <div className="col-md-3">
                   <label className="form-label mb-1" htmlFor="activity-filter-date-from">From</label>
@@ -239,7 +261,21 @@ const Activities = () => {
             </div>
           </div>
           <form className="row g-2 mt-2" onSubmit={handleCreateActivity}>
-            <div className="col-md-3">
+            <div className="col-md-2">
+              <input
+                name="user"
+                className="form-control"
+                placeholder="User"
+                list="activity-create-user-list"
+                value={form.user}
+                onChange={handleChange}
+                autoComplete="off"
+              />
+              <datalist id="activity-create-user-list">
+                {allUsers.map(u => <option key={u.username} value={u.username} />)}
+              </datalist>
+            </div>
+            <div className="col-md-2">
               <input
                 name="activity_type"
                 className="form-control"
@@ -274,7 +310,7 @@ const Activities = () => {
                 required
               />
             </div>
-            <div className="col-md-3">
+            <div className="col-md-2">
               <input
                 name="date"
                 type="date"
@@ -313,7 +349,11 @@ const Activities = () => {
       {!loading && !error && activities.length === 0 && (
         <div className="alert alert-info alert-dismissible fade show" role="alert">
           <i className="bi bi-info-circle-fill me-2"></i>
-          <strong>No data available</strong> - No activities found. Please check the backend API.
+          {filters.user || filters.date_from || filters.date_to ? (
+            <><strong>No results</strong> - No activities found for {filters.user ? `"${filters.user}"` : 'the selected filters'}. Use the form above to add a new activity.</>
+          ) : (
+            <><strong>No data available</strong> - No activities found. Please check the backend API.</>
+          )}
           <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
       )}
@@ -403,7 +443,10 @@ const Activities = () => {
                             )}
                           </td>
                           <td className="text-center align-middle">
-                            {editingActivityId === activity.id ? (
+                            {(() => {
+                              const canEdit = isAdmin || activity.user === currentUser?.username;
+                              if (!canEdit) return <span className="text-muted">—</span>;
+                              return editingActivityId === activity.id ? (
                               <div className="d-flex justify-content-center gap-2">
                                 <button
                                   type="button"
@@ -441,7 +484,8 @@ const Activities = () => {
                                   Delete
                                 </button>
                               </div>
-                            )}
+                            );
+                            })()}
                           </td>
                         </tr>
                       ))}
