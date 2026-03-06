@@ -168,9 +168,19 @@ def me(request):
     # PATCH
     allowed = {'first_name', 'last_name', 'email'}
     data = {k: v for k, v in request.data.items() if k in allowed}
-    serializer = UserSerializer(user, data=data, partial=True)
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
+    if not data:
+        return Response(UserSerializer(user).data)
+    # Djongo can't reliably UPDATE the AbstractUser table, so we use pymongo.
+    import pymongo
+    client = pymongo.MongoClient('localhost', 27017)
+    db = client['octofit_db']
+    db['octofit_tracker_user'].update_one(
+        {'username': user.username},
+        {'$set': data},
+    )
+    # Refresh the Django object so the serializer returns updated values.
+    for k, v in data.items():
+        setattr(user, k, v)
     return Response(UserSerializer(user).data)
 
 @api_view(['GET'])
