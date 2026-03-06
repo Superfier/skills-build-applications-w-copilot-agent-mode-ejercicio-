@@ -43,7 +43,7 @@ class ObjectIdLookupMixin:
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('id')
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
@@ -57,7 +57,7 @@ class TeamViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
         serializer.save(members=[self.request.user.username])
 
 class ActivityViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
-    queryset = Activity.objects.all()
+    queryset = Activity.objects.all().order_by('-date')
     serializer_class = ActivitySerializer
     permission_classes = [IsAuthenticated]
 
@@ -158,6 +158,21 @@ def login(request):
 def logout(request):
     return Response({'detail': 'Logged out successfully (client token invalidated).'}, status=status.HTTP_200_OK)
 
+
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def me(request):
+    user = request.user
+    if request.method == 'GET':
+        return Response(UserSerializer(user).data)
+    # PATCH
+    allowed = {'first_name', 'last_name', 'email'}
+    data = {k: v for k, v in request.data.items() if k in allowed}
+    serializer = UserSerializer(user, data=data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(UserSerializer(user).data)
+
 @api_view(['GET'])
 def api_root(request, format=None):
     return Response({
@@ -169,4 +184,35 @@ def api_root(request, format=None):
         'register': '/api/auth/register/',
         'login': '/api/auth/login/',
         'logout': '/api/auth/logout/',
+        'me': '/api/auth/me/',
+        'suggestions': '/api/workouts/suggestions/',
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def workout_suggestions(request):
+    """Suggest workouts based on user's activity level."""
+    user = request.user
+    activities = Activity.objects.filter(user=user.username)
+    total_calories = sum(a.calories for a in activities)
+    count = activities.count()
+
+    if count == 0:
+        difficulty = 'Easy'
+    elif total_calories / max(count, 1) > 400:
+        difficulty = 'Hard'
+    elif total_calories / max(count, 1) > 200:
+        difficulty = 'Medium'
+    else:
+        difficulty = 'Easy'
+
+    suggestions = Workout.objects.filter(difficulty__iexact=difficulty)
+    if not suggestions.exists():
+        suggestions = Workout.objects.all()
+
+    return Response({
+        'difficulty_level': difficulty,
+        'stats': {'total_activities': count, 'total_calories': round(total_calories, 1), 'avg_calories': round(total_calories / max(count, 1), 1)},
+        'suggestions': WorkoutSerializer(suggestions, many=True).data,
     })

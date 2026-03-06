@@ -1,20 +1,25 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getApiBaseUrl, requestJson } from '../api';
+import { useToast } from './ToastProvider';
+import ConfirmModal from './ConfirmModal';
 
 const Teams = () => {
+  const addToast = useToast();
   const [teams, setTeams] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [teamName, setTeamName] = useState('');
   const [saving, setSaving] = useState(false);
   const [editingTeamId, setEditingTeamId] = useState(null);
   const [editingTeamName, setEditingTeamName] = useState('');
+  const [expandedTeamId, setExpandedTeamId] = useState(null);
+  const [memberInput, setMemberInput] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const fetchTeams = useCallback(async () => {
     try {
       const data = await requestJson(`${getApiBaseUrl()}/teams/`);
-
-      // Handle both paginated (.results) and plain array responses
       const teamsList = data.results || data;
       setTeams(Array.isArray(teamsList) ? teamsList : []);
       setError(null);
@@ -26,9 +31,15 @@ const Teams = () => {
     }
   }, []);
 
-  useEffect(() => {
-    fetchTeams();
-  }, [fetchTeams]);
+  const fetchUsers = useCallback(async () => {
+    try {
+      const data = await requestJson(`${getApiBaseUrl()}/users/`);
+      const usersList = data.results || data;
+      setUsers(Array.isArray(usersList) ? usersList : []);
+    } catch (_) { /* ignore */ }
+  }, []);
+
+  useEffect(() => { fetchTeams(); fetchUsers(); }, [fetchTeams, fetchUsers]);
 
   const handleCreateTeam = async (event) => {
     event.preventDefault();
@@ -43,6 +54,7 @@ const Teams = () => {
         body: JSON.stringify({ name: teamName.trim() }),
       });
       setTeamName('');
+      addToast('Team created successfully!');
       await fetchTeams();
     } catch (saveError) {
       setError(saveError.message);
@@ -79,6 +91,7 @@ const Teams = () => {
         body: JSON.stringify({ name: editingTeamName.trim() }),
       });
       cancelEdit();
+      addToast('Team updated!');
       await fetchTeams();
     } catch (saveError) {
       setError(saveError.message);
@@ -94,21 +107,71 @@ const Teams = () => {
       return;
     }
 
-    if (!window.confirm('Delete this team?')) {
-      return;
-    }
+    setConfirmDelete(teamId);
+  };
+
+  const executeDeleteTeam = async () => {
+    const teamId = confirmDelete;
+    setConfirmDelete(null);
+    const encodedTeamId = encodeURIComponent(String(teamId || ''));
 
     setSaving(true);
     try {
       await requestJson(`${getApiBaseUrl()}/teams/${encodedTeamId}/`, {
         method: 'DELETE',
       });
-      if (editingTeamId === teamId) {
-        cancelEdit();
-      }
+      if (editingTeamId === teamId) cancelEdit();
+      if (expandedTeamId === String(teamId)) setExpandedTeamId(null);
+      addToast('Team deleted.', 'warning');
       await fetchTeams();
     } catch (deleteError) {
       setError(deleteError.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleExpand = (teamId) => {
+    setExpandedTeamId((prev) => (prev === String(teamId) ? null : String(teamId)));
+    setMemberInput('');
+  };
+
+  const addMember = async (team, username) => {
+    if (!username.trim()) return;
+    const members = Array.isArray(team.members) ? [...team.members] : [];
+    if (members.includes(username.trim())) {
+      setError(`"${username.trim()}" is already a member.`);
+      return;
+    }
+    members.push(username.trim());
+    setSaving(true);
+    try {
+      await requestJson(`${getApiBaseUrl()}/teams/${encodeURIComponent(String(team.id))}/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ members }),
+      });
+      setMemberInput('');
+      addToast(`Member added!`);
+      await fetchTeams();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeMember = async (team, username) => {
+    const members = (Array.isArray(team.members) ? team.members : []).filter((m) => m !== username);
+    setSaving(true);
+    try {
+      await requestJson(`${getApiBaseUrl()}/teams/${encodeURIComponent(String(team.id))}/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ members }),
+      });
+      addToast('Member removed.', 'warning');
+      await fetchTeams();
+    } catch (err) {
+      setError(err.message);
     } finally {
       setSaving(false);
     }
@@ -181,7 +244,8 @@ const Teams = () => {
                         const teamIdStr = String(team.id);
                         const isEditing = editingTeamId === teamIdStr;
                         return (
-                          <tr key={teamIdStr || team.name || index}>
+                          <React.Fragment key={teamIdStr || team.name || index}>
+                          <tr>
                             <td className="text-center align-middle">
                               <span className="badge bg-success">{typeof team.id === 'string' && team.id.length > 12 ? `${team.id.slice(0, 6)}...${team.id.slice(-4)}` : team.id || index + 1}</span>
                             </td>
@@ -198,9 +262,12 @@ const Teams = () => {
                               )}
                             </td>
                             <td className="text-center align-middle">
-                              <span className="badge bg-info text-dark">
-                                {Array.isArray(team.members) ? team.members.length : 0}
-                              </span>
+                              <button type="button" className="btn btn-sm btn-link p-0" onClick={() => toggleExpand(team.id)}>
+                                <span className="badge bg-info text-dark">
+                                  {Array.isArray(team.members) ? team.members.length : 0}
+                                  <i className={`bi bi-chevron-${expandedTeamId === teamIdStr ? 'up' : 'down'} ms-1`}></i>
+                                </span>
+                              </button>
                             </td>
                             <td className="align-middle">
                               {team.created_at ? new Date(team.created_at).toLocaleDateString() : '—'}
@@ -249,6 +316,32 @@ const Teams = () => {
                               </div>
                             </td>
                           </tr>
+                          {expandedTeamId === teamIdStr && (
+                            <tr>
+                              <td colSpan={5} className="bg-light">
+                                <div className="p-2">
+                                  <strong className="d-block mb-2">Members:</strong>
+                                  <div className="d-flex flex-wrap gap-1 mb-2">
+                                    {(Array.isArray(team.members) ? team.members : []).map((m) => (
+                                      <span key={m} className="badge bg-secondary d-flex align-items-center gap-1">
+                                        {m}
+                                        <button type="button" className="btn-close btn-close-white" style={{ fontSize: '0.5rem' }} onClick={() => removeMember(team, m)} disabled={saving} aria-label="Remove"></button>
+                                      </span>
+                                    ))}
+                                    {(!team.members || team.members.length === 0) && <span className="text-muted">No members yet</span>}
+                                  </div>
+                                  <div className="input-group input-group-sm" style={{ maxWidth: 320 }}>
+                                    <input className="form-control" placeholder="Add username" value={memberInput} onChange={(e) => setMemberInput(e.target.value)} list="user-suggestions" />
+                                    <datalist id="user-suggestions">
+                                      {users.filter((u) => !(team.members || []).includes(u.username)).map((u) => <option key={u.username} value={u.username} />)}
+                                    </datalist>
+                                    <button className="btn btn-success" type="button" onClick={() => addMember(team, memberInput)} disabled={saving || !memberInput.trim()}>Add</button>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                          </React.Fragment>
                         );
                       })}
                     </tbody>
@@ -259,6 +352,14 @@ const Teams = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        show={confirmDelete !== null}
+        title="Delete Team"
+        message="Are you sure you want to delete this team? This cannot be undone."
+        onConfirm={executeDeleteTeam}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getApiBaseUrl, fetchWithAuth, requestJson } from '../api';
+import { TableSkeleton } from './Skeleton';
 
 const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -95,12 +96,7 @@ const Leaderboard = () => {
       </div>
 
       {loading && (
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p className="mt-3 text-muted">Loading leaderboard...</p>
-        </div>
+        <TableSkeleton rows={4} cols={4} headerColor="danger" title="Loading Leaderboard..." />
       )}
 
       {error && !loading && (

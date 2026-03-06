@@ -53,9 +53,9 @@ class Command(BaseCommand):
 
         # Borrado robusto: eliminar solo instancias válidas
         for model in [User, Team, Activity, Workout]:
-            ids = list(model.objects.values_list('id', flat=True))
+            ids = list(model.objects.values_list('pk', flat=True))
             if ids:
-                model.objects.filter(id__in=ids).delete()
+                model.objects.filter(pk__in=ids).delete()
         # Limpieza directa en MongoDB para usuarios corruptos (sin id)
         try:
             from djongo.database import connect

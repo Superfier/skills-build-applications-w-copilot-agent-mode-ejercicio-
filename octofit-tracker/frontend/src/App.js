@@ -7,7 +7,10 @@ import Teams from './components/Teams';
 import Activities from './components/Activities';
 import Workouts from './components/Workouts';
 import Leaderboard from './components/Leaderboard';
+import Profile from './components/Profile';
+import Dashboard from './components/Dashboard';
 import { getApiBaseUrl, getAuthToken, setAuthToken, fetchWithAuth } from './api';
+import { ToastProvider } from './components/ToastProvider';
 
 function Home() {
   return (
@@ -131,6 +134,14 @@ function AppContent() {
 
   const isActive = (path) => location.pathname === path;
 
+  // Close navbar collapse on mobile when a link is clicked
+  const closeNavbar = () => {
+    const navbarCollapse = document.getElementById('navbarNav');
+    if (navbarCollapse && navbarCollapse.classList.contains('show')) {
+      navbarCollapse.classList.remove('show');
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await fetchWithAuth(`${getApiBaseUrl()}/auth/logout/`, { method: 'POST' });
@@ -164,26 +175,38 @@ function AppContent() {
           <div className="collapse navbar-collapse" id="navbarNav">
             <ul className="navbar-nav ms-auto">
               <li className="nav-item">
-                <Link className={`nav-link ${isActive('/') ? 'active' : ''}`} to="/">Home</Link>
+                <Link className={`nav-link ${isActive('/') ? 'active' : ''}`} to="/" onClick={closeNavbar}>Home</Link>
               </li>
               <li className="nav-item">
-                <Link className={`nav-link ${isActive('/users') ? 'active' : ''}`} to="/users">Users</Link>
+                <Link className={`nav-link ${isActive('/users') ? 'active' : ''}`} to="/users" onClick={closeNavbar}>Users</Link>
               </li>
               <li className="nav-item">
-                <Link className={`nav-link ${isActive('/teams') ? 'active' : ''}`} to="/teams">Teams</Link>
+                <Link className={`nav-link ${isActive('/teams') ? 'active' : ''}`} to="/teams" onClick={closeNavbar}>Teams</Link>
               </li>
               <li className="nav-item">
-                <Link className={`nav-link ${isActive('/activities') ? 'active' : ''}`} to="/activities">Activities</Link>
+                <Link className={`nav-link ${isActive('/activities') ? 'active' : ''}`} to="/activities" onClick={closeNavbar}>Activities</Link>
               </li>
               <li className="nav-item">
-                <Link className={`nav-link ${isActive('/workouts') ? 'active' : ''}`} to="/workouts">Workouts</Link>
+                <Link className={`nav-link ${isActive('/workouts') ? 'active' : ''}`} to="/workouts" onClick={closeNavbar}>Workouts</Link>
               </li>
               <li className="nav-item">
-                <Link className={`nav-link ${isActive('/leaderboard') ? 'active' : ''}`} to="/leaderboard">Leaderboard</Link>
+                <Link className={`nav-link ${isActive('/leaderboard') ? 'active' : ''}`} to="/leaderboard" onClick={closeNavbar}>Leaderboard</Link>
+              </li>
+              <li className="nav-item">
+                <Link className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`} to="/dashboard" onClick={closeNavbar}>
+                  <i className="bi bi-graph-up me-1"></i>Dashboard
+                </Link>
               </li>
               {isAuthenticated && (
                 <li className="nav-item">
-                  <button type="button" className="btn btn-sm btn-danger ms-3 mt-1" onClick={handleLogout}>
+                  <Link className={`nav-link ${isActive('/profile') ? 'active' : ''}`} to="/profile" onClick={closeNavbar}>
+                    <i className="bi bi-person-circle me-1"></i>Profile
+                  </Link>
+                </li>
+              )}
+              {isAuthenticated && (
+                <li className="nav-item">
+                  <button type="button" className="btn btn-sm btn-danger ms-3 mt-1" onClick={() => { closeNavbar(); handleLogout(); }}>
                     Logout
                   </button>
                 </li>
@@ -204,6 +227,8 @@ function AppContent() {
             <Route path="/activities" element={<Activities />} />
             <Route path="/workouts" element={<Workouts />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/dashboard" element={<Dashboard />} />
           </Routes>
         )}
       </main>
@@ -219,9 +244,11 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <ToastProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </ToastProvider>
   );
 }
 

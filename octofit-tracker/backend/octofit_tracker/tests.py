@@ -133,16 +133,16 @@ class ProtectedApiTests(APITestCase):
 
         user_filter_response = self.client.get('/api/activities/?user=secure-user')
         self.assertEqual(user_filter_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(user_filter_response.data), 2)
+        self.assertEqual(len(user_filter_response.data['results']), 2)
 
         date_filter_response = self.client.get('/api/activities/?date_from=2024-03-05&date_to=2024-03-15')
         self.assertEqual(date_filter_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(date_filter_response.data), 2)
+        self.assertEqual(len(date_filter_response.data['results']), 2)
 
         combined_filter_response = self.client.get('/api/activities/?user=secure-user&date=2024-03-10')
         self.assertEqual(combined_filter_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(combined_filter_response.data), 1)
-        self.assertEqual(combined_filter_response.data[0]['activity_type'], 'swim')
+        self.assertEqual(len(combined_filter_response.data['results']), 1)
+        self.assertEqual(combined_filter_response.data['results'][0]['activity_type'], 'swim')
 
     def test_workout_create_update_and_delete(self):
         self.client.force_authenticate(user=self.user)
@@ -196,11 +196,12 @@ class ProtectedApiTests(APITestCase):
 
         response = self.client.get('/api/leaderboard/?rebuild=1')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
-        self.assertEqual(response.data[0]['team_name'], 'Blue Team')
-        self.assertEqual(response.data[0]['score'], 300)
-        self.assertEqual(response.data[1]['team_name'], 'Red Team')
-        self.assertEqual(response.data[1]['score'], 150)
+        results = response.data['results']
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[0]['team_name'], 'Blue Team')
+        self.assertEqual(results[0]['score'], 300)
+        self.assertEqual(results[1]['team_name'], 'Red Team')
+        self.assertEqual(results[1]['score'], 150)
 
 class DataModelSmokeTests(APITestCase):
     def test_create_domain_objects(self):

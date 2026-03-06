@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getApiBaseUrl, requestJson } from '../api';
+import { useToast } from './ToastProvider';
+import ConfirmModal from './ConfirmModal';
 
 const Activities = () => {
+  const addToast = useToast();
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [editingActivityId, setEditingActivityId] = useState(null);
   const [editingForm, setEditingForm] = useState({
     activity_type: '',
@@ -88,6 +92,7 @@ const Activities = () => {
           date: form.date,
         }),
       });
+      addToast('Activity created successfully!');
       await fetchActivities();
     } catch (saveError) {
       setError(saveError.message);
@@ -140,6 +145,7 @@ const Activities = () => {
         }),
       });
       cancelEditActivity();
+      addToast('Activity updated!');
       await fetchActivities();
     } catch (saveError) {
       setError(saveError.message);
@@ -155,15 +161,20 @@ const Activities = () => {
       return;
     }
 
-    if (!window.confirm('Delete this activity?')) {
-      return;
-    }
+    setConfirmDelete(activityId);
+  };
+
+  const executeDelete = async () => {
+    const activityId = confirmDelete;
+    setConfirmDelete(null);
+    const encodedActivityId = encodeURIComponent(String(activityId || ''));
 
     setSaving(true);
     try {
       await requestJson(`${getApiBaseUrl()}/activities/${encodedActivityId}/`, {
         method: 'DELETE',
       });
+      addToast('Activity deleted.', 'warning');
       if (editingActivityId === activityId) {
         cancelEditActivity();
       }
@@ -442,6 +453,14 @@ const Activities = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        show={confirmDelete !== null}
+        title="Delete Activity"
+        message="Are you sure you want to delete this activity? This cannot be undone."
+        onConfirm={executeDelete}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 };
