@@ -1553,3 +1553,328 @@ footer p {
     min-width: 90px;
   }
 }
+
+/* ═══════════════════════════════════════════
+   Activities Page
+   ═══════════════════════════════════════════ */
+
+.activity-icon-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.activity-create-card {
+  border-left: 4px solid #ffc107 !important;
+}
+
+.activity-card {
+  border-radius: 0.75rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.activity-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+.activity-list-item {
+  border-radius: 12px !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.activity-list-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+.activity-card-editing {
+  border: 2px solid #007bff !important;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15) !important;
+}
+
+.activity-type-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: #1565c0;
+  flex-shrink: 0;
+}
+
+.activity-stat {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+/* ═══════════════════════════════════════════
+   Leaderboard Page
+   ═══════════════════════════════════════════ */
+
+.lb-podium-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px 16px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: transform 0.25s ease;
+}
+.lb-podium-card:hover {
+  transform: translateY(-4px);
+}
+
+.lb-medal-emoji {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.lb-podium-avatar {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.lb-score {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.lb-podium-bar {
+  margin-top: 16px;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 12px;
+  transition: height 0.5s ease;
+}
+
+.lb-podium-rank {
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.1rem;
+}
+
+.lb-rank-card {
+  overflow: hidden;
+  border-radius: 12px !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.lb-rank-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+.lb-rank-stripe {
+  height: 5px;
+  width: 100%;
+}
+
+.lb-rank-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.lb-progress-wrap {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.lb-progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s ease;
+}
+
+/* ═══════════════════════════════════════════
+   Teams Page
+   ═══════════════════════════════════════════ */
+
+.team-icon-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(67, 233, 123, 0.3);
+  flex-shrink: 0;
+}
+
+.team-create-card {
+  border-left: 4px solid #43e97b !important;
+}
+
+.team-card-stripe {
+  height: 5px;
+  width: 100%;
+}
+
+.team-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 12px !important;
+}
+
+.team-card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.13) !important;
+}
+
+.team-avatar-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
+   Users Page
+   ═══════════════════════════════════════════ */
+
+.user-icon-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+  flex-shrink: 0;
+}
+
+.user-avatar-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.user-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 12px !important;
+}
+
+.user-card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.13) !important;
+}
+
+.user-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+/* ═══════════════════════════════════════════
+   Workouts Page
+   ═══════════════════════════════════════════ */
+
+.workout-icon-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  flex-shrink: 0;
+}
+
+.workout-create-card {
+  border-left: 4px solid #667eea !important;
+}
+
+.workout-card-stripe {
+  height: 5px;
+  width: 100%;
+  border-radius: 0;
+}
+
+.workout-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.workout-card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15) !important;
+}
+
+.workout-stat {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.suggestion-card {
+  border-left: 4px solid #17a2b8 !important;
+  background: linear-gradient(135deg, #f0fafe 0%, #e8f8fd 100%);
+}
+
+.suggestion-icon-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #fff;
+  flex-shrink: 0;
+}

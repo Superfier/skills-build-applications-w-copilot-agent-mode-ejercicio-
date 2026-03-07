@@ -177,195 +177,154 @@ const Teams = ({ isAdmin = false, currentUser = null }) => {
     }
   };
 
+  const GRADIENTS = [
+    'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+    'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+    'linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)',
+    'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+  ];
+
   return (
-    <div className="container mt-5 mb-5">
-      <div className="row mb-4">
-        <div className="col-12">
-          <h1 className="display-5 fw-bold text-dark">
-            <i className="bi bi-diagram-3-fill me-2"></i>Teams
-          </h1>
-          <p className="lead text-muted">Manage and view all teams</p>
-          {isAdmin && (
-          <form className="mt-3" onSubmit={handleCreateTeam}>
-            <div className="input-group">
-              <input
-                className="form-control"
-                placeholder="New team name"
-                value={teamName}
-                onChange={(e) => setTeamName(e.target.value)}
-                maxLength={100}
-                required
-              />
-              <button className="btn btn-primary" type="submit" disabled={saving}>Add</button>
-            </div>
-          </form>
-          )}
+    <div className="container mt-4 mb-5">
+      {/* Header */}
+      <div className="d-flex align-items-center mb-1">
+        <div className="team-icon-circle me-3">
+          <i className="bi bi-diagram-3-fill"></i>
+        </div>
+        <div>
+          <h1 className="display-6 fw-bold mb-0">Teams</h1>
+          <p className="text-muted mb-0">Manage and view all teams</p>
         </div>
       </div>
 
-      {error && !loading && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
-          <i className="bi bi-exclamation-circle-fill me-2"></i>
-          <strong>Error!</strong> {error}
-          <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      )}
-
-      {loading && (
-        <div className="text-center my-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p className="mt-3 text-muted">Loading teams...</p>
-        </div>
-      )}
-
-      {!loading && !error && teams.length > 0 && (
-        <div className="row">
-          <div className="col-12">
-            <div className="card shadow-sm border-0">
-              <div className="card-header bg-success text-white">
-                <h5 className="card-title mb-0">
-                  <i className="bi bi-list-check me-2"></i>Team List ({teams.length})
-                </h5>
+      <div className="mt-3">
+        {/* Create Team */}
+        {isAdmin && (
+          <div className="card border-0 shadow-sm mb-4 team-create-card">
+            <div className="card-body py-3">
+            <form className="d-flex gap-2" onSubmit={handleCreateTeam}>
+              <div className="input-group">
+                <span className="input-group-text bg-transparent border-end-0"><i className="bi bi-plus-circle text-muted"></i></span>
+                <input className="form-control border-start-0 shadow-none" placeholder="New team name..." value={teamName} onChange={(e) => setTeamName(e.target.value)} maxLength={100} required />
               </div>
-              <div className="card-body p-0">
-                <div className="table-responsive">
-                  <table className="table table-hover table-striped mb-0">
-                    <thead className="table-light">
-                      <tr>
-                        <th scope="col" className="text-center" style={{ width: '60px' }}>ID</th>
-                        <th scope="col">Team Name</th>
-                        <th scope="col" className="text-center">Members</th>
-                        <th scope="col">Created At</th>
-                        <th scope="col" className="text-center">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {teams.map((team, index) => {
-                        const teamIdStr = String(team.id);
-                        const isEditing = editingTeamId === teamIdStr;
-                        return (
-                          <React.Fragment key={teamIdStr || team.name || index}>
-                          <tr>
-                            <td className="text-center align-middle">
-                              <span className="badge bg-success">{typeof team.id === 'string' && team.id.length > 12 ? `${team.id.slice(0, 6)}...${team.id.slice(-4)}` : team.id || index + 1}</span>
-                            </td>
-                            <td className="align-middle">
-                              {isEditing ? (
-                                <input
-                                  className="form-control form-control-sm"
-                                  value={editingTeamName}
-                                  onChange={(e) => setEditingTeamName(e.target.value)}
-                                  maxLength={100}
-                                />
-                              ) : (
-                                <strong>{team.name}</strong>
-                              )}
-                            </td>
-                            <td className="text-center align-middle">
-                              <button type="button" className="btn btn-sm btn-link p-0" onClick={() => toggleExpand(team.id)}>
-                                <span className="badge bg-info text-dark">
-                                  {Array.isArray(team.members) ? team.members.length : 0}
-                                  <i className={`bi bi-chevron-${expandedTeamId === teamIdStr ? 'up' : 'down'} ms-1`}></i>
-                                </span>
-                              </button>
-                            </td>
-                            <td className="align-middle">
-                              {team.created_at ? new Date(team.created_at).toLocaleDateString() : '—'}
-                            </td>
-                            <td className="text-center align-middle">
-                              <div className="d-flex justify-content-center gap-2">
-                                {isAdmin && isEditing ? (
-                                  <>
-                                    <button
-                                      type="button"
-                                      className="btn btn-sm btn-primary"
-                                      onClick={() => handleUpdateTeam(team.id)}
-                                      disabled={saving}
-                                    >
-                                      Save
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="btn btn-sm btn-secondary"
-                                      onClick={cancelEdit}
-                                      disabled={saving}
-                                    >
-                                      Cancel
-                                    </button>
-                                  </>
-                                ) : isAdmin ? (
-                                  <>
-                                    <button
-                                      type="button"
-                                      className="btn btn-sm btn-outline-primary"
-                                      onClick={() => startEdit(team)}
-                                      disabled={saving}
-                                    >
-                                      Edit
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="btn btn-sm btn-outline-danger"
-                                      onClick={() => handleDeleteTeam(team.id)}
-                                      disabled={saving}
-                                    >
-                                      Delete
-                                    </button>
-                                  </>
-                                ) : (
-                                  (() => {
-                                    const myUsername = currentUser?.username;
-                                    const isMember = Array.isArray(team.members) && myUsername && team.members.includes(myUsername);
-                                    return isMember ? (
-                                      <button type="button" className="btn btn-sm btn-outline-warning" onClick={() => removeMember(team, myUsername)} disabled={saving}>Leave</button>
-                                    ) : (
-                                      <button type="button" className="btn btn-sm btn-outline-success" onClick={() => addMember(team, myUsername)} disabled={saving || !myUsername}>Join</button>
-                                    );
-                                  })()
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                          {expandedTeamId === teamIdStr && (
-                            <tr>
-                              <td colSpan={5} className="bg-light">
-                                <div className="p-2">
-                                  <strong className="d-block mb-2">Members:</strong>
-                                  <div className="d-flex flex-wrap gap-1 mb-2">
-                                    {(Array.isArray(team.members) ? team.members : []).map((m) => (
-                                      <span key={m} className="badge bg-secondary d-flex align-items-center gap-1">
-                                        {m}
-                                        {isAdmin && <button type="button" className="btn-close btn-close-white" style={{ fontSize: '0.5rem' }} onClick={() => removeMember(team, m)} disabled={saving} aria-label="Remove"></button>}
-                                      </span>
-                                    ))}
-                                    {(!team.members || team.members.length === 0) && <span className="text-muted">No members yet</span>}
-                                  </div>
-                                  {isAdmin && (
-                                  <div className="input-group input-group-sm" style={{ maxWidth: 320 }}>
-                                    <input className="form-control" placeholder="Add username" value={memberInput} onChange={(e) => setMemberInput(e.target.value)} list="user-suggestions" />
-                                    <datalist id="user-suggestions">
-                                      {users.filter((u) => !(team.members || []).includes(u.username)).map((u) => <option key={u.username} value={u.username} />)}
-                                    </datalist>
-                                    <button className="btn btn-success" type="button" onClick={() => addMember(team, memberInput)} disabled={saving || !memberInput.trim()}>Add</button>
-                                  </div>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                          </React.Fragment>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <button className="btn btn-primary px-4" type="submit" disabled={saving}>Create</button>
+            </form>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {error && !loading && (
+          <div className="alert alert-danger"><i className="bi bi-exclamation-circle-fill me-2"></i>{error}</div>
+        )}
+
+        {loading && (
+          <div className="text-center my-5">
+            <div className="spinner-border text-primary" role="status"><span className="visually-hidden">Loading...</span></div>
+            <p className="mt-3 text-muted">Loading teams...</p>
+          </div>
+        )}
+
+        {!loading && !error && teams.length === 0 && (
+          <div className="card border-0 shadow-sm text-center py-5">
+            <i className="bi bi-people fs-1 text-muted"></i>
+            <p className="text-muted mt-2 mb-0">No teams yet. {isAdmin ? 'Create one above!' : ''}</p>
+          </div>
+        )}
+
+        {!loading && !error && teams.length > 0 && (
+          <>
+            <p className="text-muted small mb-3"><strong>{teams.length}</strong> team{teams.length !== 1 ? 's' : ''}</p>
+            <div className="row g-3">
+              {teams.map((team, index) => {
+                const teamIdStr = String(team.id);
+                const isEditing = editingTeamId === teamIdStr;
+                const isExpanded = expandedTeamId === teamIdStr;
+                const memberCount = Array.isArray(team.members) ? team.members.length : 0;
+
+                return (
+                  <div key={teamIdStr || team.name || index} className="col-sm-6 col-xl-4">
+                    <div className="card border-0 shadow-sm h-100 team-card-hover" style={{ overflow: 'hidden' }}>
+                      <div className="team-card-stripe" style={{ background: GRADIENTS[index % GRADIENTS.length] }}></div>
+                      <div className="card-body">
+                      <div className="d-flex align-items-start gap-3 mb-3">
+                        <div className="team-avatar-circle" style={{ background: GRADIENTS[index % GRADIENTS.length] }}>
+                          {(team.name || '?').charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-grow-1 min-w-0">
+                          {isEditing ? (
+                            <input className="form-control form-control-sm fw-bold" value={editingTeamName} onChange={(e) => setEditingTeamName(e.target.value)} maxLength={100} />
+                          ) : (
+                            <h6 className="fw-bold mb-1 text-truncate">{team.name}</h6>
+                          )}
+                          <small className="text-muted">{team.created_at ? new Date(team.created_at).toLocaleDateString() : 'No date'}</small>
+                        </div>
+                      </div>
+
+                      {/* Member count toggle */}
+                      <button type="button" className="btn btn-sm btn-light w-100 d-flex justify-content-between align-items-center mb-3" onClick={() => toggleExpand(team.id)}>
+                        <span><i className="bi bi-person-fill me-1"></i>{memberCount} member{memberCount !== 1 ? 's' : ''}</span>
+                        <i className={`bi bi-chevron-${isExpanded ? 'up' : 'down'}`}></i>
+                      </button>
+
+                      {/* Expanded member section */}
+                      {isExpanded && (
+                        <div className="mb-3 p-2 rounded" style={{ background: 'rgba(0,0,0,0.03)' }}>
+                          <div className="d-flex flex-wrap gap-1 mb-2">
+                            {(Array.isArray(team.members) ? team.members : []).map((m) => (
+                              <span key={m} className="badge bg-secondary d-flex align-items-center gap-1">
+                                {m}
+                                {isAdmin && <button type="button" className="btn-close btn-close-white" style={{ fontSize: '0.5rem' }} onClick={() => removeMember(team, m)} disabled={saving} aria-label="Remove"></button>}
+                              </span>
+                            ))}
+                            {memberCount === 0 && <span className="text-muted small">No members yet</span>}
+                          </div>
+                          {isAdmin && (
+                            <div className="input-group input-group-sm">
+                              <input className="form-control" placeholder="Add username" value={memberInput} onChange={(e) => setMemberInput(e.target.value)} list={`user-suggestions-${teamIdStr}`} />
+                              <datalist id={`user-suggestions-${teamIdStr}`}>
+                                {users.filter((u) => !(team.members || []).includes(u.username)).map((u) => <option key={u.username} value={u.username} />)}
+                              </datalist>
+                              <button className="btn btn-success" type="button" onClick={() => addMember(team, memberInput)} disabled={saving || !memberInput.trim()}>Add</button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="d-flex justify-content-end gap-2 mt-auto">
+                        {isAdmin && isEditing ? (
+                          <>
+                            <button type="button" className="btn btn-sm btn-primary" onClick={() => handleUpdateTeam(team.id)} disabled={saving}>Save</button>
+                            <button type="button" className="btn btn-sm btn-secondary" onClick={cancelEdit} disabled={saving}>Cancel</button>
+                          </>
+                        ) : isAdmin ? (
+                          <>
+                            <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => startEdit(team)} disabled={saving}><i className="bi bi-pencil"></i></button>
+                            <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteTeam(team.id)} disabled={saving}><i className="bi bi-trash"></i></button>
+                          </>
+                        ) : (() => {
+                          const myUsername = currentUser?.username;
+                          const isMember = Array.isArray(team.members) && myUsername && team.members.includes(myUsername);
+                          return isMember ? (
+                            <button type="button" className="btn btn-sm btn-outline-warning" onClick={() => removeMember(team, myUsername)} disabled={saving}>Leave</button>
+                          ) : (
+                            <button type="button" className="btn btn-sm btn-outline-success" onClick={() => addMember(team, myUsername)} disabled={saving || !myUsername}>Join</button>
+                          );
+                        })()}
+                      </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
 
       <ConfirmModal
         show={confirmDelete !== null}

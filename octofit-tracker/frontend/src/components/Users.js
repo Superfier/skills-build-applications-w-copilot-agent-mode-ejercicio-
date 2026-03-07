@@ -1,7 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getApiBaseUrl, fetchWithAuth } from '../api';
 import Pagination from './Pagination';
-import { TableSkeleton } from './Skeleton';
+import { CardSkeleton } from './Skeleton';
+
+const GRADIENTS = [
+  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+  'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+  'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+  'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+  'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+  'linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)',
+  'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+];
 
 const Users = ({ isAdmin = false }) => {
   const [users, setUsers] = useState([]);
@@ -41,95 +52,98 @@ const Users = ({ isAdmin = false }) => {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
+  const filtered = search
+    ? users.filter((u) => u.username.toLowerCase().includes(search.toLowerCase()) || (u.email || '').toLowerCase().includes(search.toLowerCase()))
+    : users;
+
   return (
-    <div className="container mt-5 mb-5">
-      <div className="row mb-4">
-        <div className="col-12">
-          <h1 className="display-5 fw-bold text-dark">
-            <i className="bi bi-people-fill me-2"></i>Users
-          </h1>
-          <p className="lead text-muted">Manage and view all registered users</p>
-          <div className="input-group mb-3" style={{ maxWidth: 400 }}>
-            <span className="input-group-text"><i className="bi bi-search"></i></span>
-            <input className="form-control" placeholder="Search by username..." value={search} onChange={(e) => setSearch(e.target.value)} />
-            {search && <button className="btn btn-outline-secondary" type="button" onClick={() => setSearch('')}>Clear</button>}
-          </div>
+    <div className="container mt-4 mb-5">
+      {/* Header */}
+      <div className="d-flex align-items-center mb-1">
+        <div className="user-icon-circle me-3">
+          <i className="bi bi-people-fill"></i>
+        </div>
+        <div>
+          <h1 className="display-6 fw-bold mb-0">Users</h1>
+          <p className="text-muted mb-0">Manage and view all registered users</p>
         </div>
       </div>
 
-      {loading && (
-        <TableSkeleton rows={5} cols={5} headerColor="primary" title="Loading Users..." />
-      )}
-
-      {error && !loading && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
-          <i className="bi bi-exclamation-circle-fill me-2"></i>
-          <strong>Error!</strong> {error}
-          <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      )}
-
-      {!loading && !error && users.length === 0 && (
-        <div className="alert alert-info alert-dismissible fade show" role="alert">
-          <i className="bi bi-info-circle-fill me-2"></i>
-          <strong>No data available</strong> - No users found. Please check the backend API.
-          <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      )}
-
-      {!loading && !error && users.length > 0 && (() => {
-        const filtered = search ? users.filter((u) => u.username.toLowerCase().includes(search.toLowerCase()) || (u.email || '').toLowerCase().includes(search.toLowerCase())) : users;
-        return (<>
-        <div className="row">
-          <div className="col-12">
-            <div className="card shadow-sm border-0">
-              <div className="card-header bg-primary text-white">
-                <h5 className="card-title mb-0">
-                  <i className="bi bi-list-check me-2"></i>User List ({filtered.length})
-                </h5>
-              </div>
-              <div className="card-body p-0">
-                <div className="table-responsive">
-                  <table className="table table-hover table-striped mb-0">
-                    <thead className="table-light">
-                      <tr>
-                        <th scope="col" className="text-center" style={{ width: '60px' }}>ID</th>
-                        <th scope="col">Username</th>
-                        <th scope="col">Email</th>
-                        <th scope="col">First Name</th>
-                        <th scope="col">Last Name</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filtered.map((user, index) => (
-                        <tr key={user.id || user.username || index}>
-                          <td className="text-center align-middle">
-                            <span className="badge bg-secondary">{user.id || user.username || index + 1}</span>
-                          </td>
-                          <td className="align-middle">
-                            <strong>{user.username}</strong>
-                          </td>
-                          <td className="align-middle">{user.email}</td>
-                          <td className="align-middle">{user.first_name || '—'}</td>
-                          <td className="align-middle">{user.last_name || '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+      <div className="mt-3">
+        {/* Search */}
+        <div className="card border-0 shadow-sm mb-4">
+          <div className="card-body py-3">
+          <div className="input-group">
+            <span className="input-group-text bg-transparent border-end-0"><i className="bi bi-search text-muted"></i></span>
+            <input className="form-control border-start-0 shadow-none" placeholder="Search by username or email..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            {search && <button className="btn btn-outline-secondary" type="button" onClick={() => setSearch('')}><i className="bi bi-x-lg"></i></button>}
+          </div>
           </div>
         </div>
-        <Pagination
-          page={page}
-          hasNext={!!pagination.next}
-          hasPrev={!!pagination.previous}
-          total={pagination.count}
-          onPageChange={setPage}
-        />
-        </>);
-      })()}
+
+        {loading && <CardSkeleton count={4} />}
+
+        {error && !loading && (
+          <div className="alert alert-danger"><i className="bi bi-exclamation-circle-fill me-2"></i>{error}</div>
+        )}
+
+        {!loading && !error && filtered.length === 0 && (
+          <div className="card border-0 shadow-sm text-center py-5">
+            <i className="bi bi-person-x fs-1 text-muted"></i>
+            <p className="text-muted mt-2 mb-0">No users found.</p>
+          </div>
+        )}
+
+        {!loading && !error && filtered.length > 0 && (
+          <>
+            <p className="text-muted small mb-3"><strong>{filtered.length}</strong> user{filtered.length !== 1 ? 's' : ''}</p>
+            <div className="row g-3">
+              {filtered.map((user, index) => {
+                const gradient = GRADIENTS[index % GRADIENTS.length];
+                return (
+                  <div key={user.id || user.username || index} className="col-sm-6 col-lg-4 col-xl-3">
+                    <div className="card border-0 shadow-sm h-100 user-card-hover" style={{ overflow: 'hidden' }}>
+                      {/* Colored header strip */}
+                      <div style={{ height: 6, background: gradient }}></div>
+                      <div className="card-body text-center pt-4 pb-3">
+                        <div className="user-avatar-circle mx-auto mb-3" style={{ background: gradient }}>
+                          {(user.username || '?').charAt(0).toUpperCase()}
+                        </div>
+                        <h6 className="fw-bold mb-0">{user.username}</h6>
+                        <small className="text-muted d-block mb-3">{user.email || 'No email'}</small>
+                        <div className="d-flex justify-content-center gap-2 flex-wrap">
+                          {user.first_name && (
+                            <span className="user-stat-chip">
+                              <i className="bi bi-person-fill me-1 text-primary"></i>{user.first_name}
+                            </span>
+                          )}
+                          {user.last_name && (
+                            <span className="user-stat-chip">
+                              <i className="bi bi-person-fill me-1 text-primary"></i>{user.last_name}
+                            </span>
+                          )}
+                          {user.is_staff && (
+                            <span className="user-stat-chip" style={{ background: 'rgba(255,193,7,0.15)', color: '#856404' }}>
+                              <i className="bi bi-shield-fill-check me-1"></i>Admin
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <Pagination
+              page={page}
+              hasNext={!!pagination.next}
+              hasPrev={!!pagination.previous}
+              total={pagination.count}
+              onPageChange={setPage}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 };

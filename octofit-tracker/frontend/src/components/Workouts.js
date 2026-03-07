@@ -103,7 +103,7 @@ const WorkoutDetailModal = ({ workout, show, onClose, isAdmin, onStartWorkout, a
         <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" onClick={(e) => e.stopPropagation()}>
           <div className="modal-content">
             <div className={`modal-header bg-${getDifficultyColor(workout.difficulty)} text-white`}>
-              <h5 className="modal-title"><i className="bi bi-dumbbell me-2"></i>{workout.name}</h5>
+              <h5 className="modal-title"><i className="bi bi-heart-pulse-fill me-2"></i>{workout.name}</h5>
               <button type="button" className="btn-close btn-close-white" onClick={onClose}></button>
             </div>
             <div className="modal-body">
@@ -346,49 +346,71 @@ const Workouts = ({ isAdmin = false }) => {
   };
 
   return (
-    <div className="container mt-5 mb-5">
-      <div className="row mb-4">
-        <div className="col-12">
-          <h1 className="display-5 fw-bold text-dark">
-            <i className="bi bi-dumbbell me-2"></i>Workouts
-          </h1>
-          <p className="lead text-muted">{isAdmin ? 'Create and manage workout routines' : 'Browse workout routines'}</p>
-
-          {isAdmin && (
-          <form className="row g-2 mt-2" onSubmit={handleCreate}>
-            <div className="col-md-2">
-              <input className="form-control" placeholder="Workout name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required maxLength={100} />
-            </div>
-            <div className="col-md-3">
-              <input className="form-control" placeholder="Description" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} required />
-            </div>
-            <div className="col-md-2">
-              <select className="form-select" value={form.difficulty} onChange={(e) => setForm((p) => ({ ...p, difficulty: e.target.value }))}>
-                {DIFFICULTIES.map((d) => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </div>
-            <div className="col-md-1">
-              <input type="number" className="form-control" placeholder="Cal" title="Estimated calories" value={form.estimated_calories} min={0} onChange={(e) => setForm((p) => ({ ...p, estimated_calories: Number(e.target.value) }))} />
-            </div>
-            <div className="col-md-1">
-              <input type="number" className="form-control" placeholder="Min" title="Estimated duration (min)" value={form.estimated_duration} min={0} onChange={(e) => setForm((p) => ({ ...p, estimated_duration: Number(e.target.value) }))} />
-            </div>
-            <div className="col-md-2 d-grid">
-              <button className="btn btn-warning" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Add'}</button>
-            </div>
-          </form>
-          )}
+    <div className="container mt-4 mb-5">
+      {/* Header */}
+      <div className="d-flex align-items-center mb-1">
+        <div className="workout-icon-circle me-3">
+          <i className="bi bi-heart-pulse-fill"></i>
+        </div>
+        <div>
+          <h1 className="display-6 fw-bold mb-0">Workouts</h1>
+          <p className="text-muted mb-0">{isAdmin ? 'Create and manage workout routines' : 'Browse workout routines'}</p>
         </div>
       </div>
 
-      {/* Difficulty Filter */}
-      <div className="d-flex gap-2 mb-4 flex-wrap">
-        <button className={`btn btn-sm ${!filterDifficulty ? 'btn-dark' : 'btn-outline-dark'}`} onClick={() => setFilterDifficulty(null)}>All</button>
-        {DIFFICULTIES.map((d) => (
-          <button key={d} className={`btn btn-sm ${filterDifficulty === d ? `btn-${getDifficultyColor(d)}` : `btn-outline-${getDifficultyColor(d)}`}`} onClick={() => setFilterDifficulty(filterDifficulty === d ? null : d)}>
-            {d}
-          </button>
-        ))}
+      {/* Create Form */}
+      {isAdmin && (
+        <div className="card border-0 shadow-sm mb-4 mt-3 workout-create-card">
+          <div className="card-body py-3">
+            <h6 className="text-uppercase fw-semibold text-muted small mb-2">
+              <i className="bi bi-plus-circle me-1"></i>New Workout
+            </h6>
+            <form className="row g-2 align-items-end" onSubmit={handleCreate}>
+              <div className="col-lg-2 col-md-4">
+                <input className="form-control form-control-sm" placeholder="Workout name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required maxLength={100} />
+              </div>
+              <div className="col-lg-3 col-md-4">
+                <input className="form-control form-control-sm" placeholder="Description" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} required />
+              </div>
+              <div className="col-lg-2 col-md-4">
+                <select className="form-select form-select-sm" value={form.difficulty} onChange={(e) => setForm((p) => ({ ...p, difficulty: e.target.value }))}>
+                  {DIFFICULTIES.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+              <div className="col-lg-1 col-md-3">
+                <div className="input-group input-group-sm">
+                  <input type="number" className="form-control" placeholder="Cal" title="Estimated calories" value={form.estimated_calories} min={0} onChange={(e) => setForm((p) => ({ ...p, estimated_calories: Number(e.target.value) }))} />
+                </div>
+              </div>
+              <div className="col-lg-1 col-md-3">
+                <div className="input-group input-group-sm">
+                  <input type="number" className="form-control" placeholder="Min" title="Estimated duration" value={form.estimated_duration} min={0} onChange={(e) => setForm((p) => ({ ...p, estimated_duration: Number(e.target.value) }))} />
+                </div>
+              </div>
+              <div className="col-lg-2 col-md-6 d-grid">
+                <button className="btn btn-warning btn-sm fw-bold" type="submit" disabled={saving}>
+                  <i className="bi bi-plus-lg me-1"></i>{saving ? 'Saving...' : 'Add'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Difficulty Filter Pills */}
+      <div className="d-flex gap-2 mb-4 mt-3 flex-wrap align-items-center">
+        <small className="text-muted fw-semibold text-uppercase me-1"><i className="bi bi-funnel me-1"></i>Filter:</small>
+        <button className={`btn btn-sm rounded-pill px-3 ${!filterDifficulty ? 'btn-dark' : 'btn-outline-dark'}`} onClick={() => setFilterDifficulty(null)}>
+          All <span className="badge bg-light text-dark ms-1">{workouts.length}</span>
+        </button>
+        {DIFFICULTIES.map((d) => {
+          const count = workouts.filter((w) => w.difficulty === d).length;
+          return (
+            <button key={d} className={`btn btn-sm rounded-pill px-3 ${filterDifficulty === d ? `btn-${getDifficultyColor(d)}` : `btn-outline-${getDifficultyColor(d)}`}`} onClick={() => setFilterDifficulty(filterDifficulty === d ? null : d)}>
+              {d} <span className={`badge ${filterDifficulty === d ? 'bg-light text-dark' : `bg-${getDifficultyColor(d)} bg-opacity-25`} ms-1`}>{count}</span>
+            </button>
+          );
+        })}
       </div>
 
       {loading && <CardSkeleton count={3} />}
@@ -400,23 +422,34 @@ const Workouts = ({ isAdmin = false }) => {
         </div>
       )}
 
+      {/* Empty State */}
       {!loading && !error && filteredWorkouts.length === 0 && (
-        <div className="alert alert-info"><i className="bi bi-info-circle-fill me-2"></i>No workouts found.{filterDifficulty ? ' Try a different difficulty filter.' : ''}</div>
+        <div className="text-center py-5">
+          <i className="bi bi-journal-x display-1 text-muted"></i>
+          <h5 className="mt-3 text-muted">No workouts found</h5>
+          <p className="text-muted">{filterDifficulty ? 'Try a different difficulty filter.' : 'Create your first workout above!'}</p>
+        </div>
       )}
 
+      {/* Suggestions Banner */}
       {suggestions && suggestions.suggestions && suggestions.suggestions.length > 0 && !filterDifficulty && (
-        <div className="card shadow-sm border-0 mb-4">
-          <div className="card-header bg-info text-white">
-            <h6 className="mb-0"><i className="bi bi-lightbulb-fill me-2"></i>Recommended for You (Level: {suggestions.difficulty_level})</h6>
-          </div>
-          <div className="card-body">
-            <small className="text-muted d-block mb-2">
-              Based on {suggestions.stats.total_activities} activities, {suggestions.stats.total_calories} total calories (avg {suggestions.stats.avg_calories}/activity)
-            </small>
-            <div className="d-flex flex-wrap gap-2">
+        <div className="card border-0 shadow-sm mb-4 suggestion-card">
+          <div className="card-body py-3">
+            <div className="d-flex align-items-center mb-2">
+              <div className="suggestion-icon-circle me-2">
+                <i className="bi bi-lightbulb-fill"></i>
+              </div>
+              <div>
+                <h6 className="mb-0 fw-bold">Recommended for You</h6>
+                <small className="text-muted">
+                  Level: <strong>{suggestions.difficulty_level}</strong> &middot; {suggestions.stats.total_activities} activities &middot; avg {suggestions.stats.avg_calories} cal/activity
+                </small>
+              </div>
+            </div>
+            <div className="d-flex flex-wrap gap-2 mt-2">
               {suggestions.suggestions.map((s) => (
-                <span key={s.id} className={`badge bg-${getDifficultyColor(s.difficulty)} px-3 py-2`}>
-                  {s.name} ({s.difficulty})
+                <span key={s.id} className={`badge bg-${getDifficultyColor(s.difficulty)} px-3 py-2 rounded-pill`}>
+                  <i className="bi bi-star-fill me-1"></i>{s.name}
                 </span>
               ))}
             </div>
@@ -424,79 +457,99 @@ const Workouts = ({ isAdmin = false }) => {
         </div>
       )}
 
+      {/* Workout Cards Grid */}
       {!loading && !error && filteredWorkouts.length > 0 && (
         <div className="row">
           {filteredWorkouts.map((workout, index) => {
             const isEditing = editingId === workout.id;
+            const diffColor = getDifficultyColor(isEditing ? editForm.difficulty : workout.difficulty);
             return (
               <div key={workout.id || index} className="col-md-6 col-lg-4 mb-4">
-                <div className="card h-100 shadow-sm border-0 workout-card" style={{ cursor: isEditing ? 'default' : 'pointer' }}
-                  onClick={() => { if (!isEditing) setSelectedWorkout(workout); }}>
-                  <div className={`card-header bg-${getDifficultyColor(isEditing ? editForm.difficulty : workout.difficulty)} text-white d-flex justify-content-between align-items-center`}>
-                    {isEditing ? (
-                      <input className="form-control form-control-sm bg-transparent text-white border-white" value={editForm.name}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))} />
-                    ) : (
-                      <h5 className="card-title mb-0">{workout.name}</h5>
-                    )}
-                  </div>
-                  <div className="card-body">
+                <div
+                  className={`card h-100 border-0 shadow-sm workout-card ${isEditing ? '' : 'workout-card-hover'}`}
+                  style={{ cursor: isEditing ? 'default' : 'pointer' }}
+                  onClick={() => { if (!isEditing) setSelectedWorkout(workout); }}
+                >
+                  {/* Colored top bar */}
+                  <div className={`workout-card-stripe bg-${diffColor}`}></div>
+                  <div className="card-body pt-3">
                     {isEditing ? (
                       <div onClick={(e) => e.stopPropagation()}>
-                        <textarea className="form-control mb-2" rows={2} value={editForm.description} onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))} />
+                        <input className="form-control form-control-sm fw-bold mb-2" value={editForm.name} onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))} />
+                        <textarea className="form-control form-control-sm mb-2" rows={2} value={editForm.description} onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))} />
                         <select className="form-select form-select-sm mb-2" value={editForm.difficulty} onChange={(e) => setEditForm((p) => ({ ...p, difficulty: e.target.value }))}>
                           {DIFFICULTIES.map((d) => <option key={d} value={d}>{d}</option>)}
                         </select>
-                        <div className="row g-2">
+                        <div className="row g-2 mb-2">
                           <div className="col-6">
-                            <input type="number" className="form-control form-control-sm" placeholder="Calories" value={editForm.estimated_calories} min={0} onChange={(e) => setEditForm(p => ({ ...p, estimated_calories: Number(e.target.value) }))} />
+                            <div className="input-group input-group-sm">
+                              <span className="input-group-text"><i className="bi bi-fire"></i></span>
+                              <input type="number" className="form-control" placeholder="Cal" value={editForm.estimated_calories} min={0} onChange={(e) => setEditForm(p => ({ ...p, estimated_calories: Number(e.target.value) }))} />
+                            </div>
                           </div>
                           <div className="col-6">
-                            <input type="number" className="form-control form-control-sm" placeholder="Duration (min)" value={editForm.estimated_duration} min={0} onChange={(e) => setEditForm(p => ({ ...p, estimated_duration: Number(e.target.value) }))} />
+                            <div className="input-group input-group-sm">
+                              <span className="input-group-text"><i className="bi bi-clock"></i></span>
+                              <input type="number" className="form-control" placeholder="Min" value={editForm.estimated_duration} min={0} onChange={(e) => setEditForm(p => ({ ...p, estimated_duration: Number(e.target.value) }))} />
+                            </div>
                           </div>
                         </div>
                       </div>
                     ) : (
                       <>
-                        <p className="card-text text-muted">{workout.description}</p>
-                        <div className="d-flex gap-2 flex-wrap align-items-center">
-                          <span className={`badge bg-${getDifficultyColor(workout.difficulty)}`}>{workout.difficulty}</span>
-                          {workout.estimated_duration > 0 && <span className="badge bg-secondary"><i className="bi bi-clock me-1"></i>{workout.estimated_duration} min</span>}
-                          {workout.estimated_calories > 0 && <span className="badge bg-secondary"><i className="bi bi-fire me-1"></i>{workout.estimated_calories} cal</span>}
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <h5 className="card-title fw-bold mb-0">{workout.name}</h5>
+                          <span className={`badge bg-${diffColor} rounded-pill`}>{workout.difficulty}</span>
                         </div>
-                        {workout.exercises && workout.exercises.length > 0 && (
-                          <div className="mt-2">
-                            <small className="text-muted"><i className="bi bi-list-check me-1"></i>{workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''}</small>
-                          </div>
-                        )}
+                        <p className="card-text text-muted small mb-3">{workout.description}</p>
+                        <div className="d-flex gap-3 flex-wrap">
+                          {(workout.estimated_duration > 0) && (
+                            <div className="workout-stat">
+                              <i className="bi bi-clock text-primary"></i>
+                              <span className="ms-1 fw-semibold small">{workout.estimated_duration} min</span>
+                            </div>
+                          )}
+                          {(workout.estimated_calories > 0) && (
+                            <div className="workout-stat">
+                              <i className="bi bi-fire text-danger"></i>
+                              <span className="ms-1 fw-semibold small">{workout.estimated_calories} cal</span>
+                            </div>
+                          )}
+                          {workout.exercises && workout.exercises.length > 0 && (
+                            <div className="workout-stat">
+                              <i className="bi bi-list-check text-success"></i>
+                              <span className="ms-1 fw-semibold small">{workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''}</span>
+                            </div>
+                          )}
+                        </div>
                         {workout.suggested_for && workout.suggested_for.length > 0 && (
-                          <div className="alert alert-light border border-secondary py-2 px-3 mt-2 mb-0">
-                            <i className="bi bi-people-fill me-2"></i>
-                            <small className="text-muted">Suggested for <strong>{workout.suggested_for.length}</strong> user{workout.suggested_for.length !== 1 ? 's' : ''}</small>
+                          <div className="mt-2">
+                            <small className="text-muted"><i className="bi bi-people me-1"></i>Suggested for {workout.suggested_for.length} user{workout.suggested_for.length !== 1 ? 's' : ''}</small>
                           </div>
                         )}
                       </>
                     )}
                   </div>
                   {isAdmin && (
-                  <div className="card-footer bg-light d-flex gap-2" onClick={(e) => e.stopPropagation()}>
-                    {isEditing ? (
-                      <>
-                        <button className="btn btn-primary btn-sm flex-fill" onClick={() => handleUpdate(workout.id)} disabled={saving}>Save</button>
-                        <button className="btn btn-secondary btn-sm flex-fill" onClick={cancelEdit} disabled={saving}>Cancel</button>
-                      </>
-                    ) : (
-                      <>
-                        <button className="btn btn-outline-primary btn-sm flex-fill" onClick={(e) => { e.stopPropagation(); startEdit(workout); }} disabled={saving}>
-                          <i className="bi bi-pencil me-1"></i>Edit
-                        </button>
-                        <button className="btn btn-outline-danger btn-sm flex-fill" onClick={(e) => { e.stopPropagation(); handleDelete(workout.id); }} disabled={saving}>
-                          <i className="bi bi-trash me-1"></i>Delete
-                        </button>
-                      </>
-                    )}
-                  </div>
+                    <div className="card-footer bg-transparent border-top pt-0 pb-2 px-3" onClick={(e) => e.stopPropagation()}>
+                      {isEditing ? (
+                        <div className="d-flex gap-2">
+                          <button className="btn btn-primary btn-sm flex-fill py-1" onClick={() => handleUpdate(workout.id)} disabled={saving}>
+                            <i className="bi bi-check-lg me-1"></i>Save
+                          </button>
+                          <button className="btn btn-outline-secondary btn-sm flex-fill py-1" onClick={cancelEdit} disabled={saving}>Cancel</button>
+                        </div>
+                      ) : (
+                        <div className="d-flex gap-2">
+                          <button className="btn btn-outline-primary btn-sm flex-fill py-1" onClick={(e) => { e.stopPropagation(); startEdit(workout); }} disabled={saving}>
+                            <i className="bi bi-pencil me-1"></i>Edit
+                          </button>
+                          <button className="btn btn-outline-danger btn-sm flex-fill py-1" onClick={(e) => { e.stopPropagation(); handleDelete(workout.id); }} disabled={saving}>
+                            <i className="bi bi-trash me-1"></i>Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
