@@ -29,6 +29,7 @@ from .views import (
     logout,
     me,
     workout_suggestions,
+    public_stats,
 )
 import os
 from django.http import JsonResponse
@@ -62,5 +63,6 @@ urlpatterns = [
     path('api/auth/logout/', logout, name='logout'),
     path('api/auth/me/', me, name='me'),
     path('api/workouts/suggestions/', workout_suggestions, name='workout-suggestions'),
+    path('api/public/stats/', public_stats, name='public-stats'),
     path('api/', include(router.urls)),
 ]

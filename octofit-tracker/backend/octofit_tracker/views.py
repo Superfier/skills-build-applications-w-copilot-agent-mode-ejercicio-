@@ -271,3 +271,50 @@ def workout_suggestions(request):
         'stats': {'total_activities': count, 'total_calories': round(total_calories, 1), 'avg_calories': round(total_calories / max(count, 1), 1)},
         'suggestions': WorkoutSerializer(suggestions, many=True).data,
     })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def public_stats(request):
+    """Public endpoint: leaderboard ranking, top athletes, and basic stats."""
+    # Teams leaderboard
+    leaderboard_qs = Leaderboard.objects.all().order_by('-score')[:10]
+    leaderboard_data = LeaderboardSerializer(leaderboard_qs, many=True).data
+
+    # If no leaderboard rows, compute from teams + activities
+    if not leaderboard_data:
+        teams = list(Team.objects.all())
+        activities = list(Activity.objects.all())
+        computed = []
+        for team in teams:
+            members = team.members if isinstance(team.members, list) else []
+            score = sum(float(a.calories or 0) for a in activities if a.user in members)
+            computed.append({
+                'team_name': team.name,
+                'score': round(score),
+            })
+        computed.sort(key=lambda x: x['score'], reverse=True)
+        leaderboard_data = computed[:10]
+
+    # Top athletes: users with most total calories
+    from collections import defaultdict
+    user_calories = defaultdict(float)
+    for a in Activity.objects.all():
+        user_calories[a.user] += float(a.calories or 0)
+    top_athletes = sorted(user_calories.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_athletes_data = [{'username': u, 'total_calories': round(c)} for u, c in top_athletes]
+
+    # Basic counts
+    total_users = User.objects.count()
+    total_teams = Team.objects.count()
+    total_activities = Activity.objects.count()
+
+    return Response({
+        'leaderboard': leaderboard_data,
+        'top_athletes': top_athletes_data,
+        'stats': {
+            'total_users': total_users,
+            'total_teams': total_teams,
+            'total_activities': total_activities,
+        },
+    })

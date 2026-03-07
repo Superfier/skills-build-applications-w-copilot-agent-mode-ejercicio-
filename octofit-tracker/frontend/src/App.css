@@ -1900,3 +1900,280 @@ footer p {
   color: #fff;
   flex-shrink: 0;
 }
+
+/* ================================================================
+   AUTH PAGE — Split Layout (Branding + Form)
+   ================================================================ */
+.auth-page {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f2f5;
+  padding: 2rem 1rem;
+}
+
+.auth-container {
+  display: flex;
+  max-width: 900px;
+  width: 100%;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.15);
+}
+
+.auth-branding {
+  flex: 0 0 42%;
+  background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem;
+}
+
+.auth-branding-content {
+  text-align: center;
+}
+
+.auth-branding-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #fff;
+}
+
+.auth-form-panel {
+  flex: 1;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem;
+}
+
+.auth-form-inner {
+  width: 100%;
+  max-width: 360px;
+}
+
+.auth-input {
+  border-radius: .5rem;
+  padding: .65rem .85rem;
+  border-color: #dee2e6;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.auth-input:focus {
+  border-color: #6f42c1;
+  box-shadow: 0 0 0 .2rem rgba(111,66,193,.15);
+}
+
+.auth-submit-btn {
+  padding: .7rem;
+  border-radius: .5rem;
+  font-size: 1rem;
+  background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 100%);
+  border: none;
+  transition: opacity .2s;
+}
+
+.auth-submit-btn:hover:not(:disabled) {
+  opacity: .9;
+}
+
+@media (max-width: 768px) {
+  .auth-container {
+    flex-direction: column;
+  }
+  .auth-branding {
+    flex: none;
+    padding: 1.5rem;
+  }
+  .auth-form-panel {
+    padding: 1.5rem;
+  }
+}
+
+/* ================================================================
+   LANDING PAGE
+   ================================================================ */
+.landing-page {
+  background: #f8f9fa;
+}
+
+/* Hero */
+.landing-hero {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #fff;
+  padding: 5rem 1rem 4rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-hero::before {
+  content: '';
+  position: absolute;
+  top: -60%;
+  left: -20%;
+  width: 140%;
+  height: 200%;
+  background: radial-gradient(circle at 50% 50%, rgba(13,110,253,.12) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.landing-hero-badge {
+  display: inline-block;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 2rem;
+  padding: .35rem 1rem;
+  font-size: .8rem;
+  color: rgba(255,255,255,.8);
+  margin-bottom: 1.2rem;
+}
+
+.landing-hero-title {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+.landing-hero-accent {
+  background: linear-gradient(135deg, #0d6efd, #6f42c1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.landing-hero-subtitle {
+  font-size: 1.15rem;
+  color: rgba(255,255,255,.65);
+  max-width: 550px;
+  margin: 0 auto 2rem;
+}
+
+.landing-hero .btn {
+  border-radius: .5rem;
+  padding: .65rem 1.8rem;
+  font-weight: 600;
+}
+
+/* Stats Bar */
+.landing-stats-bar {
+  background: #fff;
+  border-bottom: 1px solid #e9ecef;
+  padding: 1.5rem 0;
+}
+
+.landing-stat-number {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0d6efd;
+}
+
+.landing-stat-label {
+  font-size: .8rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+/* Features */
+.landing-feature-card {
+  background: #fff;
+  border-radius: .75rem;
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid #e9ecef;
+  transition: transform .2s, box-shadow .2s;
+  height: 100%;
+}
+
+.landing-feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0,0,0,.08);
+}
+
+.landing-feature-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  color: #fff;
+  margin-bottom: .75rem;
+}
+
+/* Alt section background */
+.landing-section-alt {
+  background: #f0f2f5;
+}
+
+/* Rankings table rows */
+.landing-rank-row {
+  transition: background .15s;
+}
+
+.landing-rank-row:hover {
+  background: #f8f9fa;
+}
+
+/* Top Athletes */
+.landing-athlete-card {
+  background: #fff;
+  border-radius: .75rem;
+  padding: 1.25rem;
+  text-align: center;
+  border: 1px solid #e9ecef;
+  transition: transform .2s, box-shadow .2s;
+}
+
+.landing-athlete-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.08);
+}
+
+.landing-athlete-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* CTA Section */
+.landing-cta-section {
+  background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+  color: #fff;
+  padding: 4rem 1rem;
+  text-align: center;
+}
+
+.landing-cta-btn {
+  border-radius: .5rem;
+  padding: .7rem 2rem;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+@media (max-width: 576px) {
+  .landing-hero-title {
+    font-size: 2rem;
+  }
+  .landing-hero {
+    padding: 3rem 1rem 2.5rem;
+  }
+}
