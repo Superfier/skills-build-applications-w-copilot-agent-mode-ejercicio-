@@ -100,6 +100,13 @@ class ActivityViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(date__lte=date_to)
         return queryset
 
+    def _rebuild_leaderboard(self):
+        """Trigger leaderboard rebuild after activity changes."""
+        try:
+            rebuild_weekly_leaderboard()
+        except Exception as exc:
+            logger.warning('Leaderboard rebuild after activity change failed: %s', exc)
+
     def perform_create(self, serializer):
         user = serializer.validated_data.get('user') or self.request.user.username
         activity_type = serializer.validated_data.get('activity_type')
@@ -112,6 +119,15 @@ class ActivityViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
             from rest_framework.exceptions import ValidationError
             raise ValidationError({'detail': f'You already logged "{activity_type}" on {activity_date}.'})
         serializer.save(user=user)
+        self._rebuild_leaderboard()
+
+    def perform_update(self, serializer):
+        serializer.save()
+        self._rebuild_leaderboard()
+
+    def perform_destroy(self, instance):
+        instance.delete()
+        self._rebuild_leaderboard()
 
 
 class WorkoutViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
@@ -141,23 +157,13 @@ class LeaderboardViewSet(viewsets.ModelViewSet):
         return super().get_queryset().order_by('-score', 'week')
 
     def list(self, request, *args, **kwargs):
-        force_rebuild = request.query_params.get('rebuild') == '1'
-        has_leaderboard_rows = False
+        # Always rebuild leaderboard from current activities so scores stay fresh.
         try:
-            has_leaderboard_rows = Leaderboard.objects.count() > 0
-        except Exception:
-            has_leaderboard_rows = False
-
-        should_rebuild = force_rebuild or not has_leaderboard_rows
-        has_teams = False
-
-        try:
-            # djongo can raise on QuerySet.exists() for some queries.
             has_teams = Team.objects.count() > 0
         except Exception:
             has_teams = False
 
-        if should_rebuild and has_teams:
+        if has_teams:
             try:
                 rebuild_weekly_leaderboard()
             except Exception as exc:
@@ -277,7 +283,14 @@ def workout_suggestions(request):
 @permission_classes([AllowAny])
 def public_stats(request):
     """Public endpoint: leaderboard ranking, top athletes, and basic stats."""
-    # Teams leaderboard
+    # Rebuild leaderboard to ensure fresh data
+    try:
+        if Team.objects.count() > 0:
+            rebuild_weekly_leaderboard()
+    except Exception:
+        pass
+
+    # Teams leaderboard (now freshly rebuilt)
     leaderboard_qs = Leaderboard.objects.all().order_by('-score')[:10]
     leaderboard_data = LeaderboardSerializer(leaderboard_qs, many=True).data
 

@@ -31,7 +31,8 @@ def rebuild_weekly_leaderboard(week: date | None = None) -> int:
         for row in Activity.objects.values('user').annotate(total_calories=Sum('calories'))
     }
 
-    Leaderboard.objects.filter(week=week).delete()
+    # Delete ALL leaderboard rows (not just current week) to avoid stale duplicates.
+    Leaderboard.objects.all().delete()
 
     created_rows = 0
     for team in Team.objects.all():
