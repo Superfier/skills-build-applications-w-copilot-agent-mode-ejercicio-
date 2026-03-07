@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
-import octoFitLogo from './octofitapp-small.png';
+import OctoFitLogo from './components/OctoFitLogo';
 import Users from './components/Users';
 import Teams from './components/Teams';
 import Activities from './components/Activities';
@@ -64,7 +64,7 @@ function AuthPanel({ onAuthenticated, initialMode = 'login' }) {
         <div className="auth-branding">
           <div className="auth-branding-content">
             <div className="auth-branding-icon mb-3">
-              <i className="bi bi-heart-pulse-fill"></i>
+              <OctoFitLogo size={64} />
             </div>
             <h2 className="fw-bold text-white mb-2">OctoFit Tracker</h2>
             <p className="text-white-50 mb-4">Your fitness journey starts here. Track activities, compete with teams, and climb the leaderboard.</p>
@@ -221,8 +221,12 @@ function AppContent() {
       <nav className="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
         <div className="container-fluid">
           <Link className="navbar-brand" to="/">
-            <img src={octoFitLogo} alt="OctoFit Logo" />
-            OctoFit Tracker
+            <OctoFitLogo size={38} className="brand-logo" />
+            <span className="brand-text">
+              <span className="brand-octo">Octo</span>
+              <span className="brand-fit">Fit</span>
+              <span className="brand-tracker">Tracker</span>
+            </span>
           </Link>
           <button
             className="navbar-toggler"
