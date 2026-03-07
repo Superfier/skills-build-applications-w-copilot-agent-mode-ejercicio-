@@ -1,48 +1,224 @@
-from django.test import TestCase
-from django.urls import reverse
-from rest_framework.test import APIClient
+from datetime import date
+from rest_framework.test import APITestCase
+from rest_framework import status
 from .models import User, Team, Activity, Workout, Leaderboard
 
-class UserTests(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.user = User.objects.create_user(username='testuser', password='testpass')
 
-    def test_user_creation(self):
+class AuthFlowTests(APITestCase):
+    def test_register_login_and_logout(self):
+        register_response = self.client.post(
+            '/api/auth/register/',
+            {'username': 'demo', 'password': 'demo12345', 'email': 'demo@example.com'},
+            format='json',
+        )
+        self.assertEqual(register_response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('token', register_response.data)
+
+        login_response = self.client.post(
+            '/api/auth/login/',
+            {'username': 'demo', 'password': 'demo12345'},
+            format='json',
+        )
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        token = login_response.data['token']
+
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+        logout_response = self.client.post('/api/auth/logout/', {}, format='json')
+        self.assertEqual(logout_response.status_code, status.HTTP_200_OK)
+
+
+class ProtectedApiTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='secure-user', password='pass12345')
+
+    def test_users_endpoint_requires_authentication(self):
+        response = self.client.get('/api/users/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_users_endpoint_returns_data_for_authenticated_user(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get('/api/users/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_team_create_adds_request_user_as_member(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post('/api/teams/', {'name': 'Team Secure'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        team = Team.objects.get(name='Team Secure')
+        self.assertEqual(len(team.members), 1)
+        self.assertIn(self.user.username, team.members)
+
+    def test_activity_create_assigns_request_user(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(
+            '/api/activities/',
+            {
+                'activity_type': 'run',
+                'duration': 25,
+                'calories': 210,
+                'date': '2024-03-01',
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        activity = Activity.objects.get(activity_type='run', duration=25)
+        self.assertEqual(activity.user, self.user.username)
+
+    def test_team_update_and_delete(self):
+        self.client.force_authenticate(user=self.user)
+        team = Team.objects.create(name='Initial Team', members=[self.user.username])
+
+        update_response = self.client.patch(
+            f'/api/teams/{team.pk}/',
+            {'name': 'Updated Team'},
+            format='json',
+        )
+        self.assertEqual(update_response.status_code, status.HTTP_200_OK)
+        team.refresh_from_db()
+        self.assertEqual(team.name, 'Updated Team')
+
+        delete_response = self.client.delete(f'/api/teams/{team.pk}/')
+        self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Team.objects.filter(pk=team.pk).exists())
+
+    def test_activity_update_and_delete(self):
+        self.client.force_authenticate(user=self.user)
+        activity = Activity.objects.create(
+            user=self.user.username,
+            activity_type='bike',
+            duration=40,
+            calories=350,
+            date='2024-03-05',
+        )
+
+        update_response = self.client.patch(
+            f'/api/activities/{activity.pk}/',
+            {'duration': 45, 'calories': 360},
+            format='json',
+        )
+        self.assertEqual(update_response.status_code, status.HTTP_200_OK)
+        activity.refresh_from_db()
+        self.assertEqual(activity.duration, 45)
+        self.assertEqual(activity.calories, 360)
+
+        delete_response = self.client.delete(f'/api/activities/{activity.pk}/')
+        self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Activity.objects.filter(pk=activity.pk).exists())
+
+    def test_activity_filters_by_user_and_date_range(self):
+        self.client.force_authenticate(user=self.user)
+        other_user = User.objects.create_user(username='other-user', password='pass12345')
+
+        Activity.objects.create(
+            user=self.user.username,
+            activity_type='run',
+            duration=30,
+            calories=250,
+            date='2024-03-01',
+        )
+        Activity.objects.create(
+            user=self.user.username,
+            activity_type='swim',
+            duration=20,
+            calories=180,
+            date='2024-03-10',
+        )
+        Activity.objects.create(
+            user=other_user.username,
+            activity_type='bike',
+            duration=60,
+            calories=500,
+            date='2024-03-10',
+        )
+
+        user_filter_response = self.client.get('/api/activities/?user=secure-user')
+        self.assertEqual(user_filter_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(user_filter_response.data['results']), 2)
+
+        date_filter_response = self.client.get('/api/activities/?date_from=2024-03-05&date_to=2024-03-15')
+        self.assertEqual(date_filter_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(date_filter_response.data['results']), 2)
+
+        combined_filter_response = self.client.get('/api/activities/?user=secure-user&date=2024-03-10')
+        self.assertEqual(combined_filter_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(combined_filter_response.data['results']), 1)
+        self.assertEqual(combined_filter_response.data['results'][0]['activity_type'], 'swim')
+
+    def test_workout_create_update_and_delete(self):
+        self.client.force_authenticate(user=self.user)
+
+        create_response = self.client.post(
+            '/api/workouts/',
+            {
+                'name': 'Strength Builder',
+                'description': 'Compound lift routine',
+                'difficulty': 'Medium',
+            },
+            format='json',
+        )
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        workout = Workout.objects.get(name='Strength Builder')
+
+        update_response = self.client.patch(
+            f'/api/workouts/{workout.pk}/',
+            {'difficulty': 'Hard'},
+            format='json',
+        )
+        self.assertEqual(update_response.status_code, status.HTTP_200_OK)
+        workout.refresh_from_db()
+        self.assertEqual(workout.difficulty, 'Hard')
+
+        delete_response = self.client.delete(f'/api/workouts/{workout.pk}/')
+        self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Workout.objects.filter(pk=workout.pk).exists())
+
+    def test_leaderboard_rebuild_creates_ranked_rows(self):
+        self.client.force_authenticate(user=self.user)
+        teammate = User.objects.create_user(username='teammate', password='pass12345')
+
+        Team.objects.create(name='Blue Team', members=[self.user.username])
+        Team.objects.create(name='Red Team', members=[teammate.username])
+
+        Activity.objects.create(
+            user=self.user.username,
+            activity_type='run',
+            duration=30,
+            calories=300,
+            date='2024-03-01',
+        )
+        Activity.objects.create(
+            user=teammate.username,
+            activity_type='bike',
+            duration=45,
+            calories=150,
+            date='2024-03-02',
+        )
+
+        response = self.client.get('/api/leaderboard/?rebuild=1')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data['results']
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[0]['team_name'], 'Blue Team')
+        self.assertEqual(results[0]['score'], 300)
+        self.assertEqual(results[1]['team_name'], 'Red Team')
+        self.assertEqual(results[1]['score'], 150)
+
+class DataModelSmokeTests(APITestCase):
+    def test_create_domain_objects(self):
+        user = User.objects.create_user(username='user1', password='pass12345')
+        team = Team.objects.create(name='Team A', members=[user.username])
+        Activity.objects.create(
+            user=user.username,
+            activity_type='run',
+            duration=30,
+            calories=200,
+            date=date(2024, 1, 1),
+        )
+        Workout.objects.create(name='Cardio', description='Cardio workout', difficulty='Easy')
+        Leaderboard.objects.create(team_name=team.name, score=100, week=date(2024, 1, 7))
+
         self.assertEqual(User.objects.count(), 1)
-
-class TeamTests(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.user = User.objects.create_user(username='testuser2', password='testpass')
-        self.team = Team.objects.create(name='Team A')
-        self.team.members.add(self.user)
-
-    def test_team_creation(self):
         self.assertEqual(Team.objects.count(), 1)
-
-class ActivityTests(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.user = User.objects.create_user(username='testuser3', password='testpass')
-        self.activity = Activity.objects.create(user=self.user, activity_type='run', duration=30, calories=200, date='2024-01-01')
-
-    def test_activity_creation(self):
         self.assertEqual(Activity.objects.count(), 1)
-
-class WorkoutTests(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.workout = Workout.objects.create(name='Cardio', description='Cardio workout', difficulty='Easy')
-
-    def test_workout_creation(self):
         self.assertEqual(Workout.objects.count(), 1)
-
-class LeaderboardTests(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.team = Team.objects.create(name='Team B')
-        self.leaderboard = Leaderboard.objects.create(team=self.team, score=100, week='2024-01-01')
-
-    def test_leaderboard_creation(self):
         self.assertEqual(Leaderboard.objects.count(), 1)

@@ -20,4 +20,4 @@ class WorkoutAdmin(admin.ModelAdmin):
 
 @admin.register(Leaderboard)
 class LeaderboardAdmin(admin.ModelAdmin):
-	list_display = ('team', 'score', 'week')
+	list_display = ('team_name', 'score', 'week')

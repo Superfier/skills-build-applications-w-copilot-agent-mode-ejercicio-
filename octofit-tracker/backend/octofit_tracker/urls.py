@@ -16,7 +16,21 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UserViewSet, TeamViewSet, ActivityViewSet, WorkoutViewSet, LeaderboardViewSet, api_root
+from .views import (
+    UserViewSet,
+    TeamViewSet,
+    ActivityViewSet,
+    WorkoutViewSet,
+    ExerciseViewSet,
+    LeaderboardViewSet,
+    api_root,
+    register,
+    login,
+    logout,
+    me,
+    workout_suggestions,
+    public_stats,
+)
 import os
 from django.http import JsonResponse
 
@@ -26,6 +40,7 @@ router.register(r'users', UserViewSet)
 router.register(r'teams', TeamViewSet)
 router.register(r'activities', ActivityViewSet)
 router.register(r'workouts', WorkoutViewSet)
+router.register(r'exercises', ExerciseViewSet)
 router.register(r'leaderboard', LeaderboardViewSet)
 
 CODESPACE_NAME = os.environ.get('CODESPACE_NAME')
@@ -42,5 +57,12 @@ def api_url_info(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', api_url_info, name='api-url-info'),
+    path('api/', api_root, name='api-root'),
+    path('api/auth/register/', register, name='register'),
+    path('api/auth/login/', login, name='login'),
+    path('api/auth/logout/', logout, name='logout'),
+    path('api/auth/me/', me, name='me'),
+    path('api/workouts/suggestions/', workout_suggestions, name='workout-suggestions'),
+    path('api/public/stats/', public_stats, name='public-stats'),
     path('api/', include(router.urls)),
 ]

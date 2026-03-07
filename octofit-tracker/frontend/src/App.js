@@ -1,66 +1,183 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
-import octoFitLogo from './octofitapp-small.png';
+import OctoFitLogo from './components/OctoFitLogo';
 import Users from './components/Users';
 import Teams from './components/Teams';
 import Activities from './components/Activities';
 import Workouts from './components/Workouts';
 import Leaderboard from './components/Leaderboard';
+import Profile from './components/Profile';
+import Dashboard from './components/Dashboard';
+import LandingPage from './components/LandingPage';
+import { getApiBaseUrl, getAuthToken, setAuthToken, setCurrentUser, getCurrentUser, fetchWithAuth } from './api';
+import { ToastProvider } from './components/ToastProvider';
+import ConfirmModal from './components/ConfirmModal';
 
 function Home() {
+  return <Dashboard />;
+}
+
+function AuthPanel({ onAuthenticated, initialMode = 'login' }) {
+  const [mode, setMode] = useState(initialMode);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setError('');
+
+    const endpoint = mode === 'login' ? '/auth/login/' : '/auth/register/';
+    const payload = mode === 'login'
+      ? { username, password }
+      : { username, password, email };
+
+    try {
+      const response = await fetchWithAuth(`${getApiBaseUrl()}${endpoint}`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Authentication failed.');
+      }
+
+      setAuthToken(data.token);
+      setCurrentUser(data.user);
+      onAuthenticated();
+    } catch (authError) {
+      setError(authError.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="container mt-5 mb-5">
-      <div className="jumbotron">
-        <div className="row align-items-center">
-          <div className="col-lg-8">
-            <h1 className="display-4 fw-bold">Welcome to OctoFit Tracker</h1>
-            <p className="lead">Track your fitness activities, join teams, and compete on the leaderboard!</p>
-            <hr className="my-4" />
-            <p className="mb-4">Use the navigation menu above to explore different sections of the app.</p>
-            <div className="d-flex flex-wrap gap-2">
-              <Link to="/users" className="btn btn-light btn-lg">
-                <i className="bi bi-people-fill me-2"></i>View Users
-              </Link>
-              <Link to="/leaderboard" className="btn btn-light btn-lg">
-                <i className="bi bi-trophy-fill me-2"></i>See Rankings
-              </Link>
+    <div className="auth-page">
+      <div className="auth-container">
+        {/* Left: Branding Panel */}
+        <div className="auth-branding">
+          <div className="auth-branding-content">
+            <div className="auth-branding-icon mb-3">
+              <OctoFitLogo size={64} />
+            </div>
+            <h2 className="fw-bold text-white mb-2">OctoFit Tracker</h2>
+            <p className="text-white-50 mb-4">Your fitness journey starts here. Track activities, compete with teams, and climb the leaderboard.</p>
+            <div className="d-flex flex-column gap-2">
+              {[
+                { icon: 'bi-lightning-charge-fill', text: 'Log activities & calories' },
+                { icon: 'bi-people-fill', text: 'Join & compete in teams' },
+                { icon: 'bi-trophy-fill', text: 'Real-time leaderboards' },
+                { icon: 'bi-graph-up-arrow', text: 'Personal dashboard' },
+              ].map((f, i) => (
+                <div key={i} className="d-flex align-items-center gap-2 text-white-50">
+                  <i className={`bi ${f.icon} text-white`}></i>
+                  <small>{f.text}</small>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="col-lg-4 text-center d-none d-lg-block">
-            <div className="display-1 mb-3" style={{ fontSize: '5rem' }}>🏆</div>
-            <p className="fs-5 text-muted">Join the fitness revolution</p>
-          </div>
         </div>
-      </div>
 
-      <div className="row mt-5">
-        <div className="col-md-3 mb-4">
-          <div className="text-center">
-            <div className="display-6 text-primary mb-2">👥</div>
-            <h5>Track Users</h5>
-            <p className="text-muted">Manage all registered users</p>
-          </div>
-        </div>
-        <div className="col-md-3 mb-4">
-          <div className="text-center">
-            <div className="display-6 text-success mb-2">👨‍👩‍👧‍👦</div>
-            <h5>Create Teams</h5>
-            <p className="text-muted">Build and manage teams</p>
-          </div>
-        </div>
-        <div className="col-md-3 mb-4">
-          <div className="text-center">
-            <div className="display-6 text-warning mb-2">⚡</div>
-            <h5>Log Activities</h5>
-            <p className="text-muted">Record fitness activities</p>
-          </div>
-        </div>
-        <div className="col-md-3 mb-4">
-          <div className="text-center">
-            <div className="display-6 text-danger mb-2">🏅</div>
-            <h5>Compete</h5>
-            <p className="text-muted">Climb the leaderboard</p>
+        {/* Right: Form Panel */}
+        <div className="auth-form-panel">
+          <div className="auth-form-inner">
+            <div className="text-center mb-4">
+              <h3 className="fw-bold mb-1">{mode === 'login' ? 'Welcome back' : 'Create account'}</h3>
+              <p className="text-muted small">{mode === 'login' ? 'Sign in to continue to OctoFit' : 'Fill in the details to get started'}</p>
+            </div>
+
+            {error && (
+              <div className="alert alert-danger py-2 d-flex align-items-center gap-2">
+                <i className="bi bi-exclamation-circle-fill"></i>
+                <span className="small">{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={submit}>
+              <div className="mb-3">
+                <label className="form-label small fw-semibold" htmlFor="username">
+                  <i className="bi bi-person me-1"></i>Username
+                </label>
+                <input
+                  id="username"
+                  className="form-control auth-input"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+              {mode === 'register' && (
+                <div className="mb-3">
+                  <label className="form-label small fw-semibold" htmlFor="email">
+                    <i className="bi bi-envelope me-1"></i>Email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    className="form-control auth-input"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
+              <div className="mb-4">
+                <label className="form-label small fw-semibold" htmlFor="password">
+                  <i className="bi bi-lock me-1"></i>Password
+                </label>
+                <div className="input-group">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    className="form-control auth-input border-end-0"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary border-start-0 auth-input"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    <i className={`bi bi-eye${showPassword ? '-slash' : ''}`}></i>
+                  </button>
+                </div>
+              </div>
+              <button type="submit" className="btn btn-primary w-100 fw-bold auth-submit-btn" disabled={loading}>
+                {loading ? (
+                  <><span className="spinner-border spinner-border-sm me-2"></span>Please wait...</>
+                ) : mode === 'login' ? (
+                  <><i className="bi bi-box-arrow-in-right me-2"></i>Sign In</>
+                ) : (
+                  <><i className="bi bi-person-plus-fill me-2"></i>Create Account</>
+                )}
+              </button>
+            </form>
+
+            <div className="text-center mt-4">
+              <span className="text-muted small">
+                {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}
+              </span>
+              <button
+                type="button"
+                className="btn btn-link btn-sm fw-semibold p-0 ms-1"
+                onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
+              >
+                {mode === 'login' ? 'Sign Up' : 'Sign In'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -70,19 +187,66 @@ function Home() {
 
 function AppContent() {
   const location = useLocation();
-  
-  console.log('App component loaded with REACT_APP_CODESPACE_NAME:', process.env.REACT_APP_CODESPACE_NAME);
-  console.log('Current route:', location.pathname);
+  const navigate = useNavigate();
+  const [authVersion, setAuthVersion] = useState(0);
+  const [authMode, setAuthMode] = useState('login');
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const isAuthenticated = Boolean(getAuthToken());
+  const currentUser = getCurrentUser();
+  const isAdmin = Boolean(currentUser && currentUser.is_staff);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   const isActive = (path) => location.pathname === path;
 
+  // Close navbar collapse on mobile when a link is clicked
+  const closeNavbar = () => {
+    const navbarCollapse = document.getElementById('navbarNav');
+    if (navbarCollapse && navbarCollapse.classList.contains('show')) {
+      navbarCollapse.classList.remove('show');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetchWithAuth(`${getApiBaseUrl()}/auth/logout/`, { method: 'POST' });
+    } catch (error) {
+      // Ignore network errors and clear local token anyway for demo usability.
+    } finally {
+      setAuthToken(null);
+      setCurrentUser(null);
+      navigate('/');
+      setAuthVersion((v) => v + 1);
+    }
+  };
+
   return (
-    <div className="App">
+    <div className="App" key={authVersion}>
+      <ConfirmModal
+        show={showLogoutConfirm}
+        title="Cerrar sesión"
+        message="¿Estás seguro de que deseas cerrar sesión?"
+        confirmText="Cerrar sesión"
+        confirmColor="danger"
+        onConfirm={() => { setShowLogoutConfirm(false); handleLogout(); }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
       <nav className="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
         <div className="container-fluid">
           <Link className="navbar-brand" to="/">
-            <img src={octoFitLogo} alt="OctoFit Logo" />
-            OctoFit Tracker
+            <OctoFitLogo size={38} className="brand-logo" />
+            <span className="brand-text">
+              <span className="brand-octo">Octo</span>
+              <span className="brand-fit">Fit</span>
+              <span className="brand-tracker">Tracker</span>
+            </span>
           </Link>
           <button
             className="navbar-toggler"
@@ -97,97 +261,96 @@ function AppContent() {
           </button>
           <div className="collapse navbar-collapse" id="navbarNav">
             <ul className="navbar-nav ms-auto">
-              <li className="nav-item">
-                <Link 
-                  className={`nav-link ${isActive('/') ? 'active' : ''}`} 
-                  to="/"
-                  aria-current={isActive('/') ? 'page' : undefined}
-                >
-                  <i className="bi bi-house-fill me-1"></i>Home
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link 
-                  className={`nav-link ${isActive('/users') ? 'active' : ''}`} 
-                  to="/users"
-                  aria-current={isActive('/users') ? 'page' : undefined}
-                >
-                  <i className="bi bi-people-fill me-1"></i>Users
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link 
-                  className={`nav-link ${isActive('/teams') ? 'active' : ''}`} 
-                  to="/teams"
-                  aria-current={isActive('/teams') ? 'page' : undefined}
-                >
-                  <i className="bi bi-diagram-3-fill me-1"></i>Teams
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link 
-                  className={`nav-link ${isActive('/activities') ? 'active' : ''}`} 
-                  to="/activities"
-                  aria-current={isActive('/activities') ? 'page' : undefined}
-                >
-                  <i className="bi bi-lightning-fill me-1"></i>Activities
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link 
-                  className={`nav-link ${isActive('/workouts') ? 'active' : ''}`} 
-                  to="/workouts"
-                  aria-current={isActive('/workouts') ? 'page' : undefined}
-                >
-                  <i className="bi bi-dumbbell me-1"></i>Workouts
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link 
-                  className={`nav-link ${isActive('/leaderboard') ? 'active' : ''}`} 
-                  to="/leaderboard"
-                  aria-current={isActive('/leaderboard') ? 'page' : undefined}
-                >
-                  <i className="bi bi-trophy-fill me-1"></i>Leaderboard
-                </Link>
-              </li>
+              {isAuthenticated ? (
+                <>
+                  <li className="nav-item">
+                    <Link className={`nav-link ${isActive('/') ? 'active' : ''}`} to="/" onClick={closeNavbar}>Home</Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className={`nav-link ${isActive('/users') ? 'active' : ''}`} to="/users" onClick={closeNavbar}>Users</Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className={`nav-link ${isActive('/teams') ? 'active' : ''}`} to="/teams" onClick={closeNavbar}>Teams</Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className={`nav-link ${isActive('/activities') ? 'active' : ''}`} to="/activities" onClick={closeNavbar}>Activities</Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className={`nav-link ${isActive('/workouts') ? 'active' : ''}`} to="/workouts" onClick={closeNavbar}>Workouts</Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className={`nav-link ${isActive('/leaderboard') ? 'active' : ''}`} to="/leaderboard" onClick={closeNavbar}>Leaderboard</Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className={`nav-link ${isActive('/profile') ? 'active' : ''}`} to="/profile" onClick={closeNavbar}>
+                      <i className="bi bi-person-circle me-1"></i>Profile
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <button type="button" className="btn btn-sm btn-danger ms-3 mt-1" onClick={() => { closeNavbar(); setShowLogoutConfirm(true); }}>
+                      Logout
+                    </button>
+                  </li>
+                </>
+              ) : (
+                <>
+                  <li className="nav-item">
+                    <Link className="btn btn-outline-light btn-sm me-2 mt-1" to="/login" onClick={closeNavbar}>
+                      <i className="bi bi-box-arrow-in-right me-1"></i>Sign In
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className="btn btn-primary btn-sm mt-1" to="/register" onClick={closeNavbar}>
+                      <i className="bi bi-person-plus-fill me-1"></i>Sign Up
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
         </div>
       </nav>
 
       <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/users" element={<Users />} />
-          <Route path="/teams" element={<Teams />} />
-          <Route path="/activities" element={<Activities />} />
-          <Route path="/workouts" element={<Workouts />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-        </Routes>
+        {!isAuthenticated ? (
+          <Routes>
+            <Route path="/login" element={
+              <AuthPanel
+                key="login"
+                initialMode="login"
+                onAuthenticated={() => { setAuthVersion((v) => v + 1); navigate('/'); }}
+              />
+            } />
+            <Route path="/register" element={
+              <AuthPanel
+                key="register"
+                initialMode="register"
+                onAuthenticated={() => { setAuthVersion((v) => v + 1); navigate('/'); }}
+              />
+            } />
+            <Route path="*" element={
+              <LandingPage
+                onGoToLogin={() => navigate('/login')}
+                onGoToRegister={() => navigate('/register')}
+              />
+            } />
+          </Routes>
+        ) : (
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/users" element={<Users isAdmin={isAdmin} />} />
+            <Route path="/teams" element={<Teams isAdmin={isAdmin} currentUser={currentUser} />} />
+            <Route path="/activities" element={<Activities isAdmin={isAdmin} currentUser={currentUser} />} />
+            <Route path="/workouts" element={<Workouts isAdmin={isAdmin} />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/profile" element={<Profile />} />
+          </Routes>
+        )}
       </main>
 
       <footer className="bg-dark text-white text-center border-top border-primary">
         <div className="container py-4">
-          <div className="row">
-            <div className="col-md-6 text-start">
-              <h6 className="mb-3">OctoFit Tracker</h6>
-              <p className="small text-muted mb-0">
-                Your ultimate fitness tracking and team competition platform.
-              </p>
-            </div>
-            <div className="col-md-6 text-md-end text-start">
-              <h6 className="mb-3">Quick Links</h6>
-              <div className="small">
-                <Link to="/users" className="text-decoration-none text-white-50 me-3">Users</Link>
-                <Link to="/teams" className="text-decoration-none text-white-50 me-3">Teams</Link>
-                <Link to="/activities" className="text-decoration-none text-white-50 me-3">Activities</Link>
-                <Link to="/workouts" className="text-decoration-none text-white-50">Workouts</Link>
-              </div>
-            </div>
-          </div>
-          <hr className="my-3 border-secondary" />
-          <p className="mb-0 text-muted small">&copy; 2026 OctoFit Tracker. All rights reserved.</p>
+          <p className="mb-0 text-muted small">&copy; 2026 OctoFit Tracker. Local demo with real authentication.</p>
         </div>
       </footer>
     </div>
@@ -196,9 +359,11 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <ToastProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </ToastProvider>
   );
 }
 
