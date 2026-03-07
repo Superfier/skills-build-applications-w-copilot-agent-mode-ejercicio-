@@ -295,21 +295,23 @@ const Activities = ({ isAdmin = false, currentUser = null }) => {
             <i className="bi bi-plus-circle me-1"></i>New Activity
           </h6>
           <form className="row g-2 align-items-end" onSubmit={handleCreateActivity}>
-            <div className="col-lg-2 col-md-4">
-              <label className="form-label visually-hidden">User</label>
-              <input
-                name="user"
-                className="form-control form-control-sm"
-                placeholder="User"
-                list="activity-create-user-list"
-                value={form.user}
-                onChange={handleChange}
-                autoComplete="off"
-              />
-              <datalist id="activity-create-user-list">
-                {allUsers.map(u => <option key={u.username} value={u.username} />)}
-              </datalist>
-            </div>
+            {isAdmin && (
+              <div className="col-lg-2 col-md-4">
+                <label className="form-label visually-hidden">User</label>
+                <input
+                  name="user"
+                  className="form-control form-control-sm"
+                  placeholder="User"
+                  list="activity-create-user-list"
+                  value={form.user}
+                  onChange={handleChange}
+                  autoComplete="off"
+                />
+                <datalist id="activity-create-user-list">
+                  {allUsers.map(u => <option key={u.username} value={u.username} />)}
+                </datalist>
+              </div>
+            )}
             <div className="col-lg-2 col-md-4">
               <label className="form-label visually-hidden">Type</label>
               <input name="activity_type" className="form-control form-control-sm" placeholder="Type (run, swim...)" value={form.activity_type} onChange={handleChange} required />

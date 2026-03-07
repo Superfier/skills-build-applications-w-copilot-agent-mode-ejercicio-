@@ -108,7 +108,12 @@ class ActivityViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
             logger.warning('Leaderboard rebuild after activity change failed: %s', exc)
 
     def perform_create(self, serializer):
-        user = serializer.validated_data.get('user') or self.request.user.username
+        requested_user = serializer.validated_data.get('user')
+        # Non-admin users can only create activities for themselves
+        if requested_user and requested_user != self.request.user.username and not self.request.user.is_staff:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Only administrators can assign activities to other users.')
+        user = requested_user or self.request.user.username
         activity_type = serializer.validated_data.get('activity_type')
         activity_date = serializer.validated_data.get('date')
         # Djongo doesn't support .exists() reliably; use pymongo directly.
