@@ -112,7 +112,7 @@ const Activities = ({ isAdmin = false, currentUser = null }) => {
       addToast('Activity created successfully!');
       await fetchActivities();
     } catch (saveError) {
-      setError(saveError.message);
+      addToast(saveError.message, 'danger');
     } finally {
       setSaving(false);
     }
@@ -165,7 +165,7 @@ const Activities = ({ isAdmin = false, currentUser = null }) => {
       addToast('Activity updated!');
       await fetchActivities();
     } catch (saveError) {
-      setError(saveError.message);
+      addToast(saveError.message, 'danger');
     } finally {
       setSaving(false);
     }
