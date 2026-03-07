@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getApiBaseUrl, requestJson, fetchAllPages } from '../api';
 import { useToast } from './ToastProvider';
 import ConfirmModal from './ConfirmModal';
 
 const Activities = ({ isAdmin = false, currentUser = null }) => {
   const addToast = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,8 +19,10 @@ const Activities = ({ isAdmin = false, currentUser = null }) => {
     calories: 0,
     date: '',
   });
+  // URL ?user= param takes priority, then default to logged-in user
+  const initialUser = searchParams.get('user') || currentUser?.username || '';
   const [filters, setFilters] = useState({
-    user: '',
+    user: initialUser,
     date_from: '',
     date_to: '',
   });
@@ -79,6 +83,13 @@ const Activities = ({ isAdmin = false, currentUser = null }) => {
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
+    if (name === 'user') {
+      if (value) {
+        setSearchParams({ user: value }, { replace: true });
+      } else {
+        setSearchParams({}, { replace: true });
+      }
+    }
   };
 
   const clearFilters = () => {
@@ -87,6 +98,7 @@ const Activities = ({ isAdmin = false, currentUser = null }) => {
       date_from: '',
       date_to: '',
     });
+    setSearchParams({}, { replace: true });
   };
 
   const handleCreateActivity = async (event) => {

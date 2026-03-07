@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getApiBaseUrl, fetchWithAuth } from '../api';
 import Pagination from './Pagination';
 import { CardSkeleton } from './Skeleton';
@@ -15,6 +16,7 @@ const GRADIENTS = [
 ];
 
 const Users = ({ isAdmin = false }) => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -102,7 +104,12 @@ const Users = ({ isAdmin = false }) => {
                 const gradient = GRADIENTS[index % GRADIENTS.length];
                 return (
                   <div key={user.id || user.username || index} className="col-sm-6 col-lg-4 col-xl-3">
-                    <div className="card border-0 shadow-sm h-100 user-card-hover" style={{ overflow: 'hidden' }}>
+                    <div
+                      className="card border-0 shadow-sm h-100 user-card-hover"
+                      style={{ overflow: 'hidden', cursor: 'pointer' }}
+                      onClick={() => navigate(`/activities?user=${encodeURIComponent(user.username)}`)}
+                      title={`View ${user.username}'s activities`}
+                    >
                       {/* Colored header strip */}
                       <div style={{ height: 6, background: gradient }}></div>
                       <div className="card-body text-center pt-4 pb-3">
@@ -127,6 +134,11 @@ const Users = ({ isAdmin = false }) => {
                               <i className="bi bi-shield-fill-check me-1"></i>Admin
                             </span>
                           )}
+                        </div>
+                        <div className="mt-3 pt-2 border-top">
+                          <small className="text-primary fw-semibold">
+                            <i className="bi bi-lightning-charge-fill me-1"></i>View Activities <i className="bi bi-chevron-right small"></i>
+                          </small>
                         </div>
                       </div>
                     </div>
