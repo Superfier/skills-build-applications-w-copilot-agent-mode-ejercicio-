@@ -94,21 +94,19 @@ const Leaderboard = () => {
   };
 
   return (
-    <div className="page-wrap">
-      {/* Hero */}
-      <section className="page-hero" style={{ background: 'linear-gradient(135deg, #f5af19 0%, #f12711 100%)' }}>
-        <div className="container">
-          <div className="d-flex align-items-center gap-3">
-            <div className="page-hero-icon"><i className="bi bi-trophy-fill"></i></div>
-            <div>
-              <h1 className="page-hero-title">Leaderboard</h1>
-              <p className="page-hero-subtitle">Compete with your team and climb the rankings</p>
-            </div>
-          </div>
+    <div className="container mt-4 mb-5">
+      {/* Header */}
+      <div className="d-flex align-items-center mb-1">
+        <div className="lb-icon-circle me-3">
+          <i className="bi bi-trophy-fill"></i>
         </div>
-      </section>
+        <div>
+          <h1 className="display-6 fw-bold mb-0">Leaderboard</h1>
+          <p className="text-muted mb-0">Compete with your team and climb the rankings</p>
+        </div>
+      </div>
 
-      <div className="container page-body">
+      <div className="mt-3">
         {loading && <CardSkeleton count={3} />}
 
         {error && !loading && (
@@ -116,7 +114,7 @@ const Leaderboard = () => {
         )}
 
         {!loading && !error && leaderboard.length === 0 && (
-          <div className="glass-card text-center py-5">
+          <div className="card border-0 shadow-sm text-center py-5">
             <i className="bi bi-trophy fs-1 text-muted"></i>
             <p className="text-muted mt-2 mb-0">No leaderboard data yet.</p>
           </div>
@@ -131,11 +129,11 @@ const Leaderboard = () => {
                   const entry = leaderboard[rank];
                   if (!entry) return null;
                   const isFirst = rank === 0;
-                  const heights = [160, 120, 100];
                   const medalColors = ['#f5af19', '#8e8e8e', '#a0522d'];
+                  const pct = maxScore > 0 ? Math.round((entry.score / maxScore) * 100) : 0;
                   return (
                     <div key={entry.id || rank} className={`col-sm-4 ${isFirst ? 'order-sm-2' : rank === 1 ? 'order-sm-1' : 'order-sm-3'}`}>
-                      <div className="lb-podium-card text-center" style={{ '--podium-height': `${heights[rank]}px` }}>
+                      <div className={`lb-podium-card text-center ${isFirst ? 'lb-podium-first' : ''}`}>
                         <div className="lb-medal-emoji">{getMedalEmoji(rank)}</div>
                         <div className="lb-podium-avatar mx-auto" style={{ background: MEDAL_GRADIENTS[rank], width: isFirst ? 72 : 56, height: isFirst ? 72 : 56, fontSize: isFirst ? '1.8rem' : '1.3rem' }}>
                           {(entry.team_name || '?').charAt(0).toUpperCase()}
@@ -143,8 +141,8 @@ const Leaderboard = () => {
                         <h6 className="fw-bold mt-2 mb-1">{entry.team_name || entry.team}</h6>
                         <div className="lb-score" style={{ color: medalColors[rank] }}>{entry.score.toLocaleString()}</div>
                         <small className="text-muted">calories</small>
-                        <div className="lb-podium-bar" style={{ height: `${heights[rank]}px`, background: MEDAL_GRADIENTS[rank] }}>
-                          <span className="lb-podium-rank">#{rank + 1}</span>
+                        <div className="lb-podium-meter mt-2">
+                          <div className="lb-podium-meter-fill" style={{ width: `${pct}%`, background: MEDAL_GRADIENTS[rank] }}></div>
                         </div>
                       </div>
                     </div>
@@ -153,50 +151,58 @@ const Leaderboard = () => {
               </div>
             )}
 
-            {/* Full Ranking Cards */}
-            <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
-              <i className="bi bi-bar-chart-line-fill text-primary"></i>Full Rankings
-            </h6>
-            <div className="row g-3">
-              {leaderboard.map((entry, index) => {
-                const pct = maxScore > 0 ? Math.round((entry.score / maxScore) * 100) : 0;
-                const bg = index < 3 ? MEDAL_GRADIENTS[index] : GRADIENTS[(index - 3) % GRADIENTS.length];
+            {/* Full Ranking Table */}
+            <div className="card border-0 shadow-sm">
+              <div className="card-body p-0">
+                <div className="px-3 py-3 border-bottom">
+                  <h6 className="fw-bold mb-0 d-flex align-items-center gap-2">
+                    <i className="bi bi-list-ol text-primary"></i>
+                    Full Rankings
+                    <span className="badge bg-light text-dark ms-auto">{leaderboard.length} teams</span>
+                  </h6>
+                </div>
+                {leaderboard.map((entry, index) => {
+                  const pct = maxScore > 0 ? Math.round((entry.score / maxScore) * 100) : 0;
+                  const bg = index < 3 ? MEDAL_GRADIENTS[index] : GRADIENTS[(index - 3) % GRADIENTS.length];
+                  const isTop3 = index < 3;
 
-                return (
-                  <div key={entry.id || `${entry.team}-${index}`} className="col-md-6 col-lg-4">
-                    <div className="card border-0 shadow-sm h-100 lb-rank-card">
-                      <div className="lb-rank-stripe" style={{ background: bg }}></div>
-                      <div className="card-body">
-                        <div className="d-flex align-items-center gap-3 mb-3">
-                          <div className="lb-rank-badge" style={{ background: index < 3 ? bg : 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%)' }}>
-                            {getMedalEmoji(index) ? (
-                              <span className="fs-6">{getMedalEmoji(index)}</span>
-                            ) : (
-                              <span className="fw-bold" style={{ color: '#4a5568' }}>#{index + 1}</span>
-                            )}
-                          </div>
-                          <div className="flex-grow-1">
-                            <h6 className="fw-bold mb-0">{entry.team_name || entry.team}</h6>
-                            <small className="text-muted">Rank #{index + 1}</small>
-                          </div>
-                          <div className="text-end">
-                            <div className="fw-bold fs-5" style={{ color: index < 3 ? ['#d4930d', '#6c757d', '#8b5e3c'][index] : '#4a5568' }}>
-                              {entry.score.toLocaleString()}
-                            </div>
-                            <small className="text-muted">calories</small>
+                  return (
+                    <div key={entry.id || `${entry.team}-${index}`} className={`lb-rank-row ${index === leaderboard.length - 1 ? '' : 'border-bottom'}`}>
+                      <div className="d-flex align-items-center gap-3 px-3 py-3">
+                        {/* Position */}
+                        <div className="lb-rank-pos" style={isTop3 ? { background: bg } : {}}>
+                          {getMedalEmoji(index) ? (
+                            <span>{getMedalEmoji(index)}</span>
+                          ) : (
+                            <span className="fw-bold text-muted">#{index + 1}</span>
+                          )}
+                        </div>
+
+                        {/* Team avatar */}
+                        <div className="lb-rank-avatar" style={{ background: bg }}>
+                          {(entry.team_name || '?').charAt(0).toUpperCase()}
+                        </div>
+
+                        {/* Team name */}
+                        <div className="flex-grow-1 min-w-0">
+                          <h6 className="fw-bold mb-0 text-truncate">{entry.team_name || entry.team}</h6>
+                          <div className="lb-rank-bar-wrap mt-1">
+                            <div className="lb-rank-bar-fill" style={{ width: `${pct}%`, background: bg }}></div>
                           </div>
                         </div>
-                        <div className="lb-progress-wrap">
-                          <div className="lb-progress-bar" style={{ width: `${pct}%`, background: bg }}></div>
-                        </div>
-                        <div className="text-end mt-1">
-                          <small className="text-muted fw-semibold">{pct}%</small>
+
+                        {/* Score */}
+                        <div className="text-end flex-shrink-0">
+                          <div className={`fw-bold ${isTop3 ? 'fs-5' : ''}`} style={{ color: isTop3 ? ['#d4930d', '#6c757d', '#8b5e3c'][index] : '#4a5568' }}>
+                            {entry.score.toLocaleString()}
+                          </div>
+                          <small className="text-muted">cal</small>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </>
         )}
