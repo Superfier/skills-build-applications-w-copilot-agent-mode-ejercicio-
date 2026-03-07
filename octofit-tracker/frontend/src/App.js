@@ -316,12 +316,14 @@ function AppContent() {
           <Routes>
             <Route path="/login" element={
               <AuthPanel
+                key="login"
                 initialMode="login"
                 onAuthenticated={() => { setAuthVersion((v) => v + 1); navigate('/'); }}
               />
             } />
             <Route path="/register" element={
               <AuthPanel
+                key="register"
                 initialMode="register"
                 onAuthenticated={() => { setAuthVersion((v) => v + 1); navigate('/'); }}
               />
