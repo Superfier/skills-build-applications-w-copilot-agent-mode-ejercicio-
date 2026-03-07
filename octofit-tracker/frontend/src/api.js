@@ -120,3 +120,28 @@ export const requestJson = async (url, options = {}) => {
 
   return payload;
 };
+
+/**
+ * Fetch all pages from a paginated DRF endpoint.
+ * Returns a flat array of all items across pages.
+ */
+export const fetchAllPages = async (url) => {
+  let all = [];
+  let nextUrl = url;
+  while (nextUrl) {
+    const data = await requestJson(nextUrl);
+    const items = data.results || data;
+    if (Array.isArray(items)) {
+      all = all.concat(items);
+    }
+    nextUrl = data.next || null;
+    // Convert absolute URL to relative path for proxy compatibility
+    if (nextUrl && typeof window !== 'undefined') {
+      try {
+        const parsed = new URL(nextUrl);
+        nextUrl = parsed.pathname + parsed.search;
+      } catch (_) { /* keep as-is */ }
+    }
+  }
+  return all;
+};

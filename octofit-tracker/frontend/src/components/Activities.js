@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getApiBaseUrl, requestJson } from '../api';
+import { getApiBaseUrl, requestJson, fetchAllPages } from '../api';
 import { useToast } from './ToastProvider';
 import ConfirmModal from './ConfirmModal';
 
@@ -45,10 +45,7 @@ const Activities = ({ isAdmin = false, currentUser = null }) => {
       }
 
       const url = `${getApiBaseUrl()}/activities/${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
-      const data = await requestJson(url);
-
-      // Handle both paginated (.results) and plain array responses
-      const activitiesList = data.results || data;
+      const activitiesList = await fetchAllPages(url);
       setActivities(Array.isArray(activitiesList) ? activitiesList : []);
       setError(null);
     } catch (fetchError) {

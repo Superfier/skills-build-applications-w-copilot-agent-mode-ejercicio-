@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getApiBaseUrl, requestJson, getCurrentUser } from '../api';
+import { getApiBaseUrl, requestJson, fetchAllPages, getCurrentUser } from '../api';
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
@@ -11,17 +11,16 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [usersData, teamsData, activitiesData, leaderboardData, workoutsData] = await Promise.all([
+        const [usersData, teamsData, activities, leaderboardData, workoutsData] = await Promise.all([
           requestJson(`${getApiBaseUrl()}/users/`),
           requestJson(`${getApiBaseUrl()}/teams/`),
-          requestJson(`${getApiBaseUrl()}/activities/`),
+          fetchAllPages(`${getApiBaseUrl()}/activities/`),
           requestJson(`${getApiBaseUrl()}/leaderboard/`),
           requestJson(`${getApiBaseUrl()}/workouts/`),
         ]);
 
         const users = Array.isArray(usersData?.results) ? usersData.results : (Array.isArray(usersData) ? usersData : []);
         const teams = Array.isArray(teamsData?.results) ? teamsData.results : (Array.isArray(teamsData) ? teamsData : []);
-        const activities = Array.isArray(activitiesData?.results) ? activitiesData.results : (Array.isArray(activitiesData) ? activitiesData : []);
         const leaderboard = Array.isArray(leaderboardData?.results) ? leaderboardData.results : (Array.isArray(leaderboardData) ? leaderboardData : []);
         const workouts = Array.isArray(workoutsData?.results) ? workoutsData.results : (Array.isArray(workoutsData) ? workoutsData : []);
 

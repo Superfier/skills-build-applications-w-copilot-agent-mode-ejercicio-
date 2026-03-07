@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getApiBaseUrl, fetchWithAuth, requestJson } from '../api';
+import { getApiBaseUrl, fetchWithAuth, requestJson, fetchAllPages } from '../api';
 import { CardSkeleton } from './Skeleton';
 
 const MEDAL_GRADIENTS = [
@@ -22,13 +22,10 @@ const Leaderboard = () => {
 
   useEffect(() => {
     const buildComputedLeaderboard = async () => {
-      const [teamsData, activitiesData] = await Promise.all([
-        requestJson(`${getApiBaseUrl()}/teams/`),
-        requestJson(`${getApiBaseUrl()}/activities/`),
+      const [teams, activities] = await Promise.all([
+        fetchAllPages(`${getApiBaseUrl()}/teams/`),
+        fetchAllPages(`${getApiBaseUrl()}/activities/`),
       ]);
-
-      const teams = Array.isArray(teamsData?.results) ? teamsData.results : (Array.isArray(teamsData) ? teamsData : []);
-      const activities = Array.isArray(activitiesData?.results) ? activitiesData.results : (Array.isArray(activitiesData) ? activitiesData : []);
 
       const nowIso = new Date().toISOString().slice(0, 10);
       const computed = teams
