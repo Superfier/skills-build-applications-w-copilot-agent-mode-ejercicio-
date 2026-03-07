@@ -342,7 +342,6 @@ const Workouts = ({ isAdmin = false }) => {
       addToast(`Workout "${workout.name}" logged as activity!`, 'success');
     } catch (err) {
       addToast(err.message, 'danger');
-      throw err;
     }
   };
 

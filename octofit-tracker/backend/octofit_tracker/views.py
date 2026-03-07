@@ -102,6 +102,15 @@ class ActivityViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user = serializer.validated_data.get('user') or self.request.user.username
+        activity_type = serializer.validated_data.get('activity_type')
+        activity_date = serializer.validated_data.get('date')
+        # Djongo doesn't support .exists() reliably; use pymongo directly.
+        import datetime, pymongo
+        col = pymongo.MongoClient('localhost', 27017)['octofit_db']['octofit_tracker_activity']
+        date_dt = datetime.datetime.combine(activity_date, datetime.time.min)
+        if col.find_one({'user': user, 'activity_type': activity_type, 'date': date_dt}):
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({'detail': f'You already logged "{activity_type}" on {activity_date}.'})
         serializer.save(user=user)
 
 
