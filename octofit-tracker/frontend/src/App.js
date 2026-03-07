@@ -13,32 +13,7 @@ import { getApiBaseUrl, getAuthToken, setAuthToken, setCurrentUser, getCurrentUs
 import { ToastProvider } from './components/ToastProvider';
 
 function Home() {
-  return (
-    <div className="container mt-5 mb-5">
-      <div className="jumbotron">
-        <div className="row align-items-center">
-          <div className="col-lg-8">
-            <h1 className="display-4 fw-bold">Welcome to OctoFit Tracker</h1>
-            <p className="lead">Track your fitness activities, join teams, and compete on the leaderboard.</p>
-            <hr className="my-4" />
-            <p className="mb-4">Use the navigation menu above to explore different sections of the app.</p>
-            <div className="d-flex flex-wrap gap-2">
-              <Link to="/users" className="btn btn-light btn-lg">
-                <i className="bi bi-people-fill me-2"></i>View Users
-              </Link>
-              <Link to="/leaderboard" className="btn btn-light btn-lg">
-                <i className="bi bi-trophy-fill me-2"></i>See Rankings
-              </Link>
-            </div>
-          </div>
-          <div className="col-lg-4 text-center d-none d-lg-block">
-            <div className="display-1 mb-3" style={{ fontSize: '5rem' }}>Trophy</div>
-            <p className="fs-5 text-muted">Join the fitness revolution</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return <Dashboard />;
 }
 
 function AuthPanel({ onAuthenticated }) {
@@ -198,11 +173,6 @@ function AppContent() {
               <li className="nav-item">
                 <Link className={`nav-link ${isActive('/leaderboard') ? 'active' : ''}`} to="/leaderboard" onClick={closeNavbar}>Leaderboard</Link>
               </li>
-              <li className="nav-item">
-                <Link className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`} to="/dashboard" onClick={closeNavbar}>
-                  <i className="bi bi-graph-up me-1"></i>Dashboard
-                </Link>
-              </li>
               {isAuthenticated && (
                 <li className="nav-item">
                   <Link className={`nav-link ${isActive('/profile') ? 'active' : ''}`} to="/profile" onClick={closeNavbar}>
@@ -234,7 +204,6 @@ function AppContent() {
             <Route path="/workouts" element={<Workouts isAdmin={isAdmin} />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/dashboard" element={<Dashboard />} />
           </Routes>
         )}
       </main>
