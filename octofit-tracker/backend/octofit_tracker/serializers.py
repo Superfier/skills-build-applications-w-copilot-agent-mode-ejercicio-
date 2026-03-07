@@ -2,7 +2,7 @@ import base64
 import json
 
 from rest_framework import serializers
-from .models import User, Team, Activity, Workout, Leaderboard
+from .models import User, Team, Activity, Workout, Exercise, Leaderboard
 
 
 class ObjectIdStringMixin:
@@ -40,13 +40,29 @@ class ActivitySerializer(ObjectIdStringMixin, serializers.ModelSerializer):
         model = Activity
         fields = ['id', 'user', 'activity_type', 'duration', 'calories', 'date']
 
+class ExerciseSerializer(ObjectIdStringMixin, serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Exercise
+        fields = ['id', 'workout', 'name', 'sets', 'reps', 'duration', 'muscle_group', 'order']
+
+
 class WorkoutSerializer(ObjectIdStringMixin, serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
     suggested_for = serializers.PrimaryKeyRelatedField(many=True, read_only=True, pk_field=serializers.CharField())
+    exercises = serializers.SerializerMethodField()
+
+    def get_exercises(self, obj):
+        pk = str(obj.pk) if obj.pk else None
+        if not pk:
+            return []
+        exercises = Exercise.objects.filter(workout=pk).order_by('order')
+        return ExerciseSerializer(exercises, many=True).data
 
     class Meta:
         model = Workout
-        fields = ['id', 'name', 'description', 'difficulty', 'suggested_for']
+        fields = ['id', 'name', 'description', 'difficulty', 'estimated_calories', 'estimated_duration', 'suggested_for', 'exercises']
 
 class LeaderboardSerializer(ObjectIdStringMixin, serializers.ModelSerializer):
     id = serializers.SerializerMethodField()

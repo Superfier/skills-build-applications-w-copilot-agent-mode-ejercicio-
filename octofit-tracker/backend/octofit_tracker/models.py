@@ -27,7 +27,21 @@ class Workout(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
     difficulty = models.CharField(max_length=50)
+    estimated_calories = models.IntegerField(default=0)
+    estimated_duration = models.IntegerField(default=0)  # minutes
     suggested_for = models.ManyToManyField(User, blank=True)
+
+
+class Exercise(models.Model):
+    _id = models.ObjectIdField()
+    workout = models.CharField(max_length=50)  # workout ObjectId as string
+    name = models.CharField(max_length=100)
+    sets = models.IntegerField(default=3)
+    reps = models.IntegerField(default=10)
+    duration = models.IntegerField(default=0)  # seconds, 0 means rep-based
+    muscle_group = models.CharField(max_length=100, blank=True, default='')
+    order = models.IntegerField(default=0)
+
 
 class Leaderboard(models.Model):
     _id = models.ObjectIdField()

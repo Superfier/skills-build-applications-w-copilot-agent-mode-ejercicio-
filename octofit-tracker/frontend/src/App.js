@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import octoFitLogo from './octofitapp-small.png';
 import Users from './components/Users';
@@ -130,6 +130,7 @@ function AuthPanel({ onAuthenticated }) {
 
 function AppContent() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [authVersion, setAuthVersion] = useState(0);
   const isAuthenticated = Boolean(getAuthToken());
   const currentUser = getCurrentUser();
@@ -153,6 +154,7 @@ function AppContent() {
     } finally {
       setAuthToken(null);
       setCurrentUser(null);
+      navigate('/');
       setAuthVersion((v) => v + 1);
     }
   };

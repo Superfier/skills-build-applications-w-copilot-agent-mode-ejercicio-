@@ -10,8 +10,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.http import Http404
 from django.contrib.auth import authenticate
-from .models import User, Team, Activity, Workout, Leaderboard
-from .serializers import UserSerializer, TeamSerializer, ActivitySerializer, WorkoutSerializer, LeaderboardSerializer
+from .models import User, Team, Activity, Workout, Exercise, Leaderboard
+from .serializers import UserSerializer, TeamSerializer, ActivitySerializer, WorkoutSerializer, ExerciseSerializer, LeaderboardSerializer
 from .authentication import SignedTokenAuthentication
 from .leaderboard_service import rebuild_weekly_leaderboard
 from .permissions import IsAdminUser, IsAdminOrReadOnly, IsAdminOrJoinLeaveTeam, IsOwnerOrAdmin
@@ -109,6 +109,19 @@ class WorkoutViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
     queryset = Workout.objects.all()
     serializer_class = WorkoutSerializer
     permission_classes = [IsAdminOrReadOnly]
+
+
+class ExerciseViewSet(ObjectIdLookupMixin, viewsets.ModelViewSet):
+    queryset = Exercise.objects.all().order_by('order')
+    serializer_class = ExerciseSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        workout_id = self.request.query_params.get('workout')
+        if workout_id:
+            qs = qs.filter(workout=workout_id)
+        return qs
 
 class LeaderboardViewSet(viewsets.ModelViewSet):
     queryset = Leaderboard.objects.all()

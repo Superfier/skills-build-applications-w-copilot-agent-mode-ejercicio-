@@ -21,6 +21,7 @@ from .views import (
     TeamViewSet,
     ActivityViewSet,
     WorkoutViewSet,
+    ExerciseViewSet,
     LeaderboardViewSet,
     api_root,
     register,
@@ -38,6 +39,7 @@ router.register(r'users', UserViewSet)
 router.register(r'teams', TeamViewSet)
 router.register(r'activities', ActivityViewSet)
 router.register(r'workouts', WorkoutViewSet)
+router.register(r'exercises', ExerciseViewSet)
 router.register(r'leaderboard', LeaderboardViewSet)
 
 CODESPACE_NAME = os.environ.get('CODESPACE_NAME')
