@@ -2224,6 +2224,10 @@ footer p {
   box-shadow: 0 4px 15px rgba(0,0,0,.15);
 }
 
+.profile-card .card-body {
+  padding-top: 3.5rem !important;
+}
+
 .profile-stat-icon {
   width: 42px;
   height: 42px;
@@ -2266,5 +2270,8 @@ footer p {
     height: 70px;
     font-size: 1.5rem;
     top: 35px;
+  }
+  .profile-card .card-body {
+    padding-top: 3rem !important;
   }
 }
