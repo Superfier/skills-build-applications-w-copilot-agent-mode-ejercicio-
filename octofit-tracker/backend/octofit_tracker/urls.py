@@ -21,11 +21,15 @@ from .views import (
     TeamViewSet,
     ActivityViewSet,
     WorkoutViewSet,
+    ExerciseViewSet,
     LeaderboardViewSet,
     api_root,
     register,
     login,
     logout,
+    me,
+    workout_suggestions,
+    public_stats,
 )
 import os
 from django.http import JsonResponse
@@ -36,6 +40,7 @@ router.register(r'users', UserViewSet)
 router.register(r'teams', TeamViewSet)
 router.register(r'activities', ActivityViewSet)
 router.register(r'workouts', WorkoutViewSet)
+router.register(r'exercises', ExerciseViewSet)
 router.register(r'leaderboard', LeaderboardViewSet)
 
 CODESPACE_NAME = os.environ.get('CODESPACE_NAME')
@@ -56,5 +61,8 @@ urlpatterns = [
     path('api/auth/register/', register, name='register'),
     path('api/auth/login/', login, name='login'),
     path('api/auth/logout/', logout, name='logout'),
+    path('api/auth/me/', me, name='me'),
+    path('api/workouts/suggestions/', workout_suggestions, name='workout-suggestions'),
+    path('api/public/stats/', public_stats, name='public-stats'),
     path('api/', include(router.urls)),
 ]

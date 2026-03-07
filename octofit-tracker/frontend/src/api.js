@@ -1,4 +1,5 @@
 const getCodespaceName = () => process.env.REACT_APP_CODESPACE_NAME;
+const getExplicitApiBaseUrl = () => process.env.REACT_APP_API_BASE_URL;
 
 const fromBrowserLocation = () => {
   if (typeof window === 'undefined') {
@@ -19,6 +20,16 @@ const fromBrowserLocation = () => {
 };
 
 export const getApiBaseUrl = () => {
+  const explicitApiBaseUrl = getExplicitApiBaseUrl();
+  if (explicitApiBaseUrl) {
+    return explicitApiBaseUrl.replace(/\/$/, '');
+  }
+
+  // In CRA dev mode use the frontend dev-server proxy to avoid CORS/public-port auth redirects.
+  if (typeof window !== 'undefined') {
+    return '/api';
+  }
+
   const browserResolvedUrl = fromBrowserLocation();
   if (browserResolvedUrl) {
     return browserResolvedUrl;
@@ -40,13 +51,30 @@ export const setAuthToken = (token) => {
   localStorage.removeItem('octofit_token');
 };
 
+export const getCurrentUser = () => {
+  try {
+    const raw = localStorage.getItem('octofit_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+};
+
+export const setCurrentUser = (user) => {
+  if (user) {
+    localStorage.setItem('octofit_user', JSON.stringify(user));
+    return;
+  }
+  localStorage.removeItem('octofit_user');
+};
+
 export const authHeaders = () => {
   const token = getAuthToken();
   return token ? { Authorization: `Token ${token}` } : {};
 };
 
-export const fetchWithAuth = (url, options = {}) => {
-  return fetch(url, {
+export const fetchWithAuth = async (url, options = {}) => {
+  const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -54,6 +82,18 @@ export const fetchWithAuth = (url, options = {}) => {
       ...authHeaders(),
     },
   });
+
+  // Auto-clear invalid/expired token and reload to show login screen.
+  if (response.status === 401) {
+    const token = getAuthToken();
+    if (token) {
+      setAuthToken(null);
+      setCurrentUser(null);
+      window.location.reload();
+    }
+  }
+
+  return response;
 };
 
 export const requestJson = async (url, options = {}) => {
@@ -79,4 +119,29 @@ export const requestJson = async (url, options = {}) => {
   }
 
   return payload;
+};
+
+/**
+ * Fetch all pages from a paginated DRF endpoint.
+ * Returns a flat array of all items across pages.
+ */
+export const fetchAllPages = async (url) => {
+  let all = [];
+  let nextUrl = url;
+  while (nextUrl) {
+    const data = await requestJson(nextUrl);
+    const items = data.results || data;
+    if (Array.isArray(items)) {
+      all = all.concat(items);
+    }
+    nextUrl = data.next || null;
+    // Convert absolute URL to relative path for proxy compatibility
+    if (nextUrl && typeof window !== 'undefined') {
+      try {
+        const parsed = new URL(nextUrl);
+        nextUrl = parsed.pathname + parsed.search;
+      } catch (_) { /* keep as-is */ }
+    }
+  }
+  return all;
 };

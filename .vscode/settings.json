@@ -1,6 +1,10 @@
 {
     "chat.tools.terminal.autoApprove": {
         "git push": true,
-        "git -C /workspaces/skills-build-applications-w-copilot-agent-mode-ejercicio-": true
+        "git -C /workspaces/skills-build-applications-w-copilot-agent-mode-ejercicio-": true,
+        "/^cd octofit-tracker/backend && source venv/bin/activate && python manage\\.py test$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
     }
 }
