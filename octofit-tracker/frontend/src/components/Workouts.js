@@ -92,6 +92,7 @@ const WorkoutDetailModal = ({ workout, show, onClose, isAdmin, onStartWorkout, a
     setStarting(true);
     try {
       await onStartWorkout(workout);
+      onClose();
     } finally { setStarting(false); }
   };
 
