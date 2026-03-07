@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import OctoFitLogo from './components/OctoFitLogo';
@@ -12,6 +12,7 @@ import Dashboard from './components/Dashboard';
 import LandingPage from './components/LandingPage';
 import { getApiBaseUrl, getAuthToken, setAuthToken, setCurrentUser, getCurrentUser, fetchWithAuth } from './api';
 import { ToastProvider } from './components/ToastProvider';
+import ConfirmModal from './components/ConfirmModal';
 
 function Home() {
   return <Dashboard />;
@@ -189,9 +190,19 @@ function AppContent() {
   const navigate = useNavigate();
   const [authVersion, setAuthVersion] = useState(0);
   const [authMode, setAuthMode] = useState('login');
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const isAuthenticated = Boolean(getAuthToken());
   const currentUser = getCurrentUser();
   const isAdmin = Boolean(currentUser && currentUser.is_staff);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   const isActive = (path) => location.pathname === path;
 
@@ -218,6 +229,15 @@ function AppContent() {
 
   return (
     <div className="App" key={authVersion}>
+      <ConfirmModal
+        show={showLogoutConfirm}
+        title="Cerrar sesión"
+        message="¿Estás seguro de que deseas cerrar sesión?"
+        confirmText="Cerrar sesión"
+        confirmColor="danger"
+        onConfirm={() => { setShowLogoutConfirm(false); handleLogout(); }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
       <nav className="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
         <div className="container-fluid">
           <Link className="navbar-brand" to="/">
@@ -267,7 +287,7 @@ function AppContent() {
                     </Link>
                   </li>
                   <li className="nav-item">
-                    <button type="button" className="btn btn-sm btn-danger ms-3 mt-1" onClick={() => { closeNavbar(); handleLogout(); }}>
+                    <button type="button" className="btn btn-sm btn-danger ms-3 mt-1" onClick={() => { closeNavbar(); setShowLogoutConfirm(true); }}>
                       Logout
                     </button>
                   </li>
