@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import OctoFitLogo from './components/OctoFitLogo';
@@ -194,15 +194,6 @@ function AppContent() {
   const isAuthenticated = Boolean(getAuthToken());
   const currentUser = getCurrentUser();
   const isAdmin = Boolean(currentUser && currentUser.is_staff);
-
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      e.preventDefault();
-      e.returnValue = '';
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
 
   const isActive = (path) => location.pathname === path;
 
