@@ -1,37 +1,75 @@
 <div align="center">
-
-# 🎉 Congratulations Superfier! 🎉
-
-<img src="https://octodex.github.com/images/welcometocat.png" height="200px" />
-
-### 🌟 You've successfully completed the exercise! 🌟
-
-## 🚀 Share Your Success!
-
-**Show off your new skills and inspire others!**
-
-<a href="https://twitter.com/intent/tweet?text=I%20just%20completed%20the%20%22Build%20Applications%20with%20GitHub%20Copilot%20Agent%20Mode%22%20GitHub%20Skills%20hands-on%20exercise!%20%F0%9F%8E%89%0A%0Ahttps%3A%2F%2Fgithub.com%2FSuperfier%2Fskills-build-applications-w-copilot-agent-mode-ejercicio-%0A%0A%23GitHubSkills%20%23OpenSource%20%23GitHubLearn" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/badge/Share%20on%20X-1da1f2?style=for-the-badge&logo=x&logoColor=white" alt="Share on X" />
-</a>
-<a href="https://bsky.app/intent/compose?text=I%20just%20completed%20the%20%22Build%20Applications%20with%20GitHub%20Copilot%20Agent%20Mode%22%20GitHub%20Skills%20hands-on%20exercise!%20%F0%9F%8E%89%0A%0Ahttps%3A%2F%2Fgithub.com%2FSuperfier%2Fskills-build-applications-w-copilot-agent-mode-ejercicio-%0A%0A%23GitHubSkills%20%23OpenSource%20%23GitHubLearn" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/badge/Share%20on%20Bluesky-0085ff?style=for-the-badge&logo=bluesky&logoColor=white" alt="Share on Bluesky" />
-</a>
-<a href="https://www.linkedin.com/feed/?shareActive=true&text=I%20just%20completed%20the%20%22Build%20Applications%20with%20GitHub%20Copilot%20Agent%20Mode%22%20GitHub%20Skills%20hands-on%20exercise!%20%F0%9F%8E%89%0A%0Ahttps%3A%2F%2Fgithub.com%2FSuperfier%2Fskills-build-applications-w-copilot-agent-mode-ejercicio-%0A%0A%23GitHubSkills%20%23OpenSource%20%23GitHubLearn" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/badge/Share%20on%20LinkedIn-0077b5?style=for-the-badge&logo=linkedin&logoColor=white" alt="Share on LinkedIn" />
-</a>
-
-### 🎯 What's Next?
-
-**Keep the momentum going!**
-
-[![](https://img.shields.io/badge/Return%20to%20Exercise-%E2%86%92-1f883d?style=for-the-badge&logo=github&labelColor=197935)](https://github.com/Superfier/skills-build-applications-w-copilot-agent-mode-ejercicio-/issues/1)
-[![GitHub Skills](https://img.shields.io/badge/Explore%20GitHub%20Skills-000000?style=for-the-badge&logo=github&logoColor=white)](https://learn.github.com/skills))
-
-*There's no better way to learn than building things!* 🚀
-
+  <img src="https://raw.githubusercontent.com/Superfier/octofit-tracker/main/octofit-tracker/frontend/public/logo192.png" width="120" alt="OctoFit Logo" />
+  <h1>OctoFit Tracker</h1>
+  <p>Tu viaje fitness comienza aquí. Registra actividades, compite en equipos y escala el leaderboard.</p>
 </div>
 
 ---
 
-&copy; 2025 GitHub &bull; [Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.md) &bull; [MIT License](https://gh.io/mit)
+## 🚀 Características
 
+- Autenticación y perfiles de usuario
+- Registro y seguimiento de actividades
+- Creación y gestión de equipos
+- Leaderboard competitivo
+- Sugerencias personalizadas de entrenamientos
+
+## 🛠️ Tecnologías
+- Django + Django REST Framework
+- Djongo + MongoDB
+- React
+
+## 📁 Estructura del proyecto
+
+```
+octofit-tracker/
+├── backend/
+│   ├── venv/
+│   ├── octofit_tracker/
+│   ├── api/
+│   ├── requirements.txt
+│   ├── manage.py
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   ├── build/
+│   ├── package.json
+│   ├── README.md
+```
+
+## ⚡ Instalación rápida
+
+### Backend
+1. Crear entorno virtual:
+   `python3 -m venv octofit-tracker/backend/venv`
+2. Instalar dependencias:
+   `source octofit-tracker/backend/venv/bin/activate && pip install -r octofit-tracker/backend/requirements.txt`
+3. Migrar base de datos:
+   `python octofit-tracker/backend/manage.py migrate`
+4. Poblar base de datos:
+   `python octofit-tracker/backend/manage.py populate_db`
+5. Ejecutar backend:
+   `python octofit-tracker/backend/manage.py runserver 0.0.0.0:8000`
+
+### Frontend
+1. Instalar dependencias:
+   `cd octofit-tracker/frontend && npm install`
+2. Ejecutar frontend:
+   `npm start`
+
+## 🧪 Pruebas
+- Backend: `python octofit-tracker/backend/manage.py test`
+
+## 🌐 Puertos
+- Backend: 8000
+- Frontend: 3000
+- MongoDB: 27017
+
+## 📄 Documentación
+- [Backend](octofit-tracker/backend/README.md)
+- [Frontend](octofit-tracker/frontend/README.md)
+
+## 👤 Autor
+- Superfier
+
+---

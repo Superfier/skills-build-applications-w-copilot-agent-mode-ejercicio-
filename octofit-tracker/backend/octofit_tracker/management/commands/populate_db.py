@@ -51,40 +51,63 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        # Borrado robusto vía pymongo para evitar problemas con id=None en Djongo
-        import pymongo
-        client = pymongo.MongoClient('localhost', 27017)
-        db = client['octofit_db']
-        for collection in ['octofit_tracker_user', 'octofit_tracker_team',
-                           'octofit_tracker_activity', 'octofit_tracker_workout',
-                           'octofit_tracker_exercise',
-                           'octofit_tracker_leaderboard']:
-            db[collection].delete_many({})
-        # Ensure unique index on username to prevent duplicates
-        db['octofit_tracker_user'].create_index('username', unique=True)
+        # Elimina todos los usuarios, equipos, actividades, workouts, ejercicios y leaderboard
+        User.objects.all().delete()
+        Team.objects.all().delete()
+        Activity.objects.all().delete()
+        Workout.objects.all().delete()
+        Exercise.objects.all().delete()
+        Leaderboard.objects.all().delete()
+
+
 
         # Crear usuario administrador
-        admin, _ = User.objects.get_or_create(username='admin', defaults={'email': 'admin@octofit.com'})
-        User.objects.filter(username='admin').update(
-            email='admin@octofit.com',
-            password=make_password('admin1234'),
-            is_staff=True,
-            is_superuser=True,
-        )
+        if not User.objects.filter(username='admin').exists():
+            admin = User.objects.create_user(username='admin', email='admin@octofit.com', password='admin1234')
+            admin.is_staff = True
+            admin.is_superuser = True
+            admin.save()
+        else:
+            admin = User.objects.get(username='admin')
+            admin.set_password('admin1234')
+            admin.email = 'admin@octofit.com'
+            admin.is_staff = True
+            admin.is_superuser = True
+            admin.save()
 
         # Crear equipos Marvel y DC
         marvel, _ = Team.objects.get_or_create(name='Marvel')
         dc, _ = Team.objects.get_or_create(name='DC')
 
         # Crear usuarios superhéroes
-        ironman, _ = User.objects.get_or_create(username='ironman', defaults={'email': 'ironman@marvel.com'})
-        User.objects.filter(username='ironman').update(email='ironman@marvel.com', password=make_password('1234'))
-        spiderman, _ = User.objects.get_or_create(username='spiderman', defaults={'email': 'spiderman@marvel.com'})
-        User.objects.filter(username='spiderman').update(email='spiderman@marvel.com', password=make_password('1234'))
-        batman, _ = User.objects.get_or_create(username='batman', defaults={'email': 'batman@dc.com'})
-        User.objects.filter(username='batman').update(email='batman@dc.com', password=make_password('1234'))
-        superman, _ = User.objects.get_or_create(username='superman', defaults={'email': 'superman@dc.com'})
-        User.objects.filter(username='superman').update(email='superman@dc.com', password=make_password('1234'))
+        if not User.objects.filter(username='ironman').exists():
+            ironman = User.objects.create_user(username='ironman', email='ironman@marvel.com', password='1234')
+        else:
+            ironman = User.objects.get(username='ironman')
+            ironman.set_password('1234')
+            ironman.email = 'ironman@marvel.com'
+            ironman.save()
+        if not User.objects.filter(username='spiderman').exists():
+            spiderman = User.objects.create_user(username='spiderman', email='spiderman@marvel.com', password='1234')
+        else:
+            spiderman = User.objects.get(username='spiderman')
+            spiderman.set_password('1234')
+            spiderman.email = 'spiderman@marvel.com'
+            spiderman.save()
+        if not User.objects.filter(username='batman').exists():
+            batman = User.objects.create_user(username='batman', email='batman@dc.com', password='1234')
+        else:
+            batman = User.objects.get(username='batman')
+            batman.set_password('1234')
+            batman.email = 'batman@dc.com'
+            batman.save()
+        if not User.objects.filter(username='superman').exists():
+            superman = User.objects.create_user(username='superman', email='superman@dc.com', password='1234')
+        else:
+            superman = User.objects.get(username='superman')
+            superman.set_password('1234')
+            superman.email = 'superman@dc.com'
+            superman.save()
 
         # Asignar usuarios a equipos
         self._assign_team_members(marvel, [ironman, spiderman], [ironman.username, spiderman.username])

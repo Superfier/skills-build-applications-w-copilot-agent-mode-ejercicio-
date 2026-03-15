@@ -7,6 +7,7 @@ from django.contrib.auth.models import AbstractUser
 class User(AbstractUser):
     # Stable external identifier for APIs/frontends.
     public_id = models.CharField(max_length=36, unique=True, default=lambda: str(uuid.uuid4()), editable=False)
+    # El campo primario 'id' es gestionado por Django (AutoField)
 
 class Team(models.Model):
     _id = models.ObjectIdField()
